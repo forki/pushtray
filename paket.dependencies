@@ -1,0 +1,10 @@
+framework: auto-detect
+source https://www.nuget.org/api/v2
+
+nuget FAKE
+nuget FSharp.Core     content:once
+nuget FSharp.Data     content:once
+nuget BouncyCastle
+nuget Docopt.Net      content:none
+nuget GtkSharp        content:once
+nuget WebSocketSharp  content:once

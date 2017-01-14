@@ -1,0 +1,12 @@
+[
+  {
+    "type": "nop"
+  },
+  {
+    "push": {
+      "ciphertext": "MXAdvN64uXWtLXCRaqYHEtGhiogR1VHyXX21Lpjp4jv3v+JWygMBA9Wp5npbQdfeZAgOZI+JT3y3pbmq+OrKXrK1rg==",
+      "encrypted": true
+    },
+    "type": "push"
+  }
+]

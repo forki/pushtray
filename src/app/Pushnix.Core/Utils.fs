@@ -5,11 +5,11 @@ open System.Diagnostics
 open FSharp.Data
 open FSharp.Data.HttpRequestHeaders
 
-let logOption message opt =
-  match opt with
-  | None -> Logger.error message
-  | _ -> ()
-  opt
+module Option =
+  let orElse func (opt: 'a option) =
+    match opt with
+    | None -> func()
+    | v -> v
 
 module Async =
   let map f v =
@@ -23,7 +23,7 @@ module Async =
       match choice with
       | Choice1Of2 result -> success result
       | Choice2Of2 (ex: Exception) -> Logger.debug <| sprintf "AsyncChoice: %s" ex.Message; None
-      |> logOption errorMessage)
+      |> Option.orElse (fun _ -> Logger.error errorMessage; None))
 
 module Http =
   let get accessToken url =

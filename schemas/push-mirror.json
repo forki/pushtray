@@ -1,20 +1,21 @@
-{
-  "application_name": "Pushbullet",
-  "body": "If you see this on your computer, mirroring is working!\n",
-  "created": 1.39935096416497e+09,
-  "dismissable": true,
-  "icon": "iVBORw0KGgoAAAANSUhEBgUzC42AAAADNElEQVRo\ng==\n",
-  "iden": "1e443556ba3217c",
-  "notification_id": "-8",
-  "notification_tag": null,
-  "package_name": "com.pushbullet.android",
-  "receiver_email": "elon@teslamotors.com",
-  "receiver_email_normalized": "elon@teslamotors.com",
-  "receiver_iden": "ujpah72o0",
-  "sender_email": "elon@teslamotors.com",
-  "sender_email_normalized": "elon@teslamotors.com",
-  "sender_iden": "ujpah72o0",
-  "source_device_iden": "ujpah72o0sjAoRtnM0jc",
-  "title": "Mirroring test",
-  "type": "mirror"
-}
+[
+  {
+    "type": "mirror",
+    "source_device_iden": "iwqysjz7O3P0Jl6",
+    "source_user_iden": "ujpah72o0",
+    "application_name": "Pushbullet",
+    "client_version": 270,
+    "title": "Test notification",
+    "body": "If you see this on your computer, notification mirroring is working!",
+    "dismissible": true,
+    "icon": "/9j/4AAQSkZJRgABAQAAAQABAAD",
+    "package_name": "com.pushbullet.android",
+    "notification_id": "3",
+    "actions": [
+      {
+        "label": "Done",
+        "trigger_key": "com.pushbullet.android_3_null_Done"
+      }
+    ]
+  }
+]

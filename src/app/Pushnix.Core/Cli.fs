@@ -4,7 +4,7 @@ open System
 
 let usage = """
 usage:
-  pushbullet <access-token> <encrypt-pass>
+  pushbullet <access-token> <encrypt-pass> [--show-device]
 """
 
 let private parseArgs (argv: string[]) =
@@ -23,6 +23,11 @@ let arg key  =
     | v -> Some <| v.ToString()
   else
     None
+
+let argExists key =
+  match args.[key] with
+  | null -> false
+  | v -> v.IsTrue
 
 let requiredArg key =
   match arg key with

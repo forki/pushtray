@@ -8,8 +8,8 @@ let version = "0.1.0";
 let config = getBuildParamOrDefault "config" "Debug"
 let platformTarget = getBuildParamOrDefault "platformTarget" "AnyCPU"
 
-let buildDir = "build"
-let buildDirWithConfig = combinePaths buildDir config
+let outputDir = "output"
+let outputDirWithConfig = combinePaths outputDir config
 
 Target "Build" (fun _ ->
   let setParams defaults =

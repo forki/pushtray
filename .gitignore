@@ -1,5 +1,5 @@
 .fake
 .paket
 packages
-build
+output
 extra

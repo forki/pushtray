@@ -1,7 +1,13 @@
-open Pushnix.Pushbullet
-open Pushnix.Cli
+open Gtk;
+open Pushnix
 
 [<EntryPoint>]
 let main argv =
-  start (arg "<encrypt-pass>")
+  Application.Init()
+  Pushbullet.connect <| Cli.requiredArg "<encrypt-pass>"
+
+  // TODO
+  TrayIcon.create()
+  Application.Run()
+
   0

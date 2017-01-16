@@ -18,8 +18,8 @@
     <DebugType>Full</DebugType>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <OutputPath>..\..\..\build\Debug\</OutputPath>
-    <BaseIntermediateOutputPath>..\..\..\build\$(Configuration)\</BaseIntermediateOutputPath>
+    <OutputPath>..\..\..\output\Debug\</OutputPath>
+    <BaseIntermediateOutputPath>..\..\..\output\$(Configuration)\</BaseIntermediateOutputPath>
     <IntermediateOutputPath>$(BaseIntermediateOutputPath)\obj\</IntermediateOutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
@@ -29,8 +29,8 @@
     <DebugType>PdbOnly</DebugType>
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
-    <OutputPath>..\..\..\build\Release\</OutputPath>
-    <BaseIntermediateOutputPath>..\..\..\build\$(Configuration)\</BaseIntermediateOutputPath>
+    <OutputPath>..\..\..\output\Release\</OutputPath>
+    <BaseIntermediateOutputPath>..\..\..\output\$(Configuration)\</BaseIntermediateOutputPath>
     <IntermediateOutputPath>$(BaseIntermediateOutputPath)\obj\</IntermediateOutputPath>
     <DefineConstants>
     </DefineConstants>
@@ -52,11 +52,19 @@
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="notify-sharp">
+      <ReferencePath>..\..\..\libs\notify-sharp.dll</ReferencePath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Logger.fs" />
     <Compile Include="Utils.fs" />
     <Compile Include="Cli.fs" />
+    <Compile Include="TrayIcon.fs" />
     <Compile Include="Pushbullet.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

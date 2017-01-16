@@ -1,18 +1,15 @@
 {
-  "push": {
-    "created": 1.39935096622458e+09,
-    "iden": "1e443556ba3217c",
-    "notification_id": "-8",
-    "notification_tag": null,
-    "package_name": "com.pushbullet.android",
-    "receiver_email": "elon@teslamotors.com",
-    "receiver_email_normalized": "elon@teslamotors.com",
-    "receiver_iden": "ujpah72o0",
-    "sender_email": "elon@teslamotors.com",
-    "sender_email_normalized": "elon@teslamotors.com",
-    "sender_iden": "ujpah72o0",
-    "source_device_iden": "ujpah72o0sjAoRtnM0jc",
-    "type": "dismissal"
-  },
-  "type": "push"
+  "created": 1.39935096622458e+09,
+  "iden": "1e443556ba3217c",
+  "notification_id": "-8",
+  "notification_tag": null,
+  "package_name": "com.pushbullet.android",
+  "receiver_email": "elon@teslamotors.com",
+  "receiver_email_normalized": "elon@teslamotors.com",
+  "receiver_iden": "ujpah72o0",
+  "sender_email": "elon@teslamotors.com",
+  "sender_email_normalized": "elon@teslamotors.com",
+  "sender_iden": "ujpah72o0",
+  "source_device_iden": "ujpah72o0sjAoRtnM0jc",
+  "type": "dismissal"
 }

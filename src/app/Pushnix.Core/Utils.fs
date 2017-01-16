@@ -1,6 +1,7 @@
 module Pushnix.Utils
 
 open System
+open System.Diagnostics
 open FSharp.Data
 open FSharp.Data.HttpRequestHeaders
 
@@ -50,3 +51,20 @@ module Http =
         headers = [ ContentType HttpContentTypes.Json; "Access-Token", accessToken ],
         body = TextRequest body )
     |> Async.Catch
+
+let shellExec (command: string) args =
+  let startInfo =
+    ProcessStartInfo
+      ( FileName = command,
+        Arguments = args,
+        UseShellExecute = false,
+        CreateNoWindow = true,
+        WindowStyle = ProcessWindowStyle.Hidden )
+  let proc = new Process(StartInfo = startInfo, EnableRaisingEvents = true)
+  async {
+    try
+      proc.Start() |> ignore
+      return proc.ExitCode
+    finally
+      proc.Dispose()
+  }

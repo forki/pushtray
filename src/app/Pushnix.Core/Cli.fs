@@ -4,7 +4,7 @@ open System
 
 let usage = """
 usage:
-  pushbullet <access-token> [<encrypt-pass>]
+  pushbullet <access-token> <encrypt-pass>
 """
 
 let private parseArgs (argv: string[]) =

@@ -5,9 +5,9 @@ open FSharp.Data.JsonExtensions
 open WebSocketSharp
 open Pushnix.Utils
 
+type StreamSchema = JsonProvider<"""../../../schemas/stream.json""", SampleIsList=true>
 type UserSchema = JsonProvider<"""../../../schemas/user.json""">
 type DevicesSchema = JsonProvider<"""../../../schemas/devices.json""">
-type StreamSchema = JsonProvider<"""../../../schemas/stream.json""", SampleIsList=true>
 type PushMirrorSchema = JsonProvider<"""../../../schemas/push-mirror.json""", SampleIsList=true>
 type PushDismissalSchema = JsonProvider<"""../../../schemas/push-dismissal.json""", SampleIsList=true>
 type PushSmsChangedSchema = JsonProvider<"""../../../schemas/sms-changed.json""", InferTypesFromValues=false>
@@ -78,101 +78,6 @@ module Crypto =
       Logger.debug <| sprintf "Pushbullet: Decryption failure (%s)" ex.Message
       None
 
-module Notification =
-  open System
-  open Gdk
-  open Notifications
-
-  type NotificationFormat =
-    | Full
-    | Short
-
-  type NotificationData = {
-    Summary: NotificationText
-    Body: NotificationText
-    DeviceInfo: string option
-    Timestamp: string option
-    Icon: Icon
-    Actions: PushMirrorSchema.Action[]
-    Dismissible: bool
-  }
-
-  and NotificationText =
-    | Text of string
-    | TextWithFormat of (string * (string -> string))
-
-  and Icon =
-    | Base64 of string
-    | File of string
-
-  let private format =
-    Cli.arg "--format"
-    |> Option.map (fun s ->
-      match s.ToLower() with
-      | "full" -> Full
-      | "short" -> Short
-      | _ -> Short)
-    |> Option.fold (fun _ v -> v) Short
-
-  let private leftPad = "  "
-
-  let private wrap width line =
-    let rec loop remaining result words =
-      match words with
-      | head :: tail ->
-        // TODO: Fix HTML tags being included as words
-        let (acc, remain) =
-          if String.length head > remaining then (sprintf "%s\n%s" head leftPad, width)
-          else (head + " ", remaining - head.Length)
-        loop remain (result + acc) tail
-      | _ -> result
-    String.split [|' '|] line |> (List.ofArray >> loop width "")
-
-  let private pad width line =
-    (if String.length line < width then
-      line + (String.replicate (width - String.length line) " ")
-    else
-      line)
-    |> sprintf "%s%s" leftPad
-
-  let private prettify str =
-    str
-    |> String.split [|'\n'|]
-    |> Array.map (wrap 40 >> pad 42)
-    |> String.concat "\n"
-
-  let private handleAction triggerKey =
-    // TODO
-    ()
-
-  let send data =
-    let text = function
-      | Text(str) -> prettify str
-      | TextWithFormat(str, format) -> format <| prettify str
-    let footer =
-      match format with
-      | Full ->
-        sprintf "%s %s"
-          (defaultArg data.DeviceInfo "")
-          (defaultArg data.Timestamp "")
-        |> prettify
-        |> sprintf "\n<i>%s</i>"
-      | Short -> ""
-    let icon =
-      match data.Icon with
-      | Base64(str) -> new Pixbuf(Convert.FromBase64String(str))
-      | File(path) -> new Pixbuf(path)
-
-    Gtk.Application.Invoke(fun _ _ ->
-      let notif =
-        new Notification
-          ( text data.Summary,
-            text data.Body + footer,
-            icon )
-      data.Actions |> Array.iter (fun a -> notif.AddAction(a.Label, a.Label, fun _ _ -> handleAction a.TriggerKey))
-      notif.AddAction("Dismiss", "Dissmis", fun _ _ -> notif.Close())
-      notif.Show())
-
 module private Push =
   open Notification
 
@@ -198,6 +103,10 @@ module private Push =
   let private deviceInfo deviceIden =
     device deviceIden |> Option.map (fun d -> d.Nickname.Trim())
 
+  let private handleAction triggerKey =
+    // TODO
+    ()
+
   let private mirror (push: PushMirrorSchema.Root) =
     send
       { Summary = Text(sprintf "%s: %s" (push.ApplicationName.Trim()) (push.Title.Trim()))
@@ -205,7 +114,9 @@ module private Push =
         DeviceInfo = deviceInfo push.SourceDeviceIden
         Timestamp = None
         Icon = Notification.Base64(push.Icon)
-        Actions = push.Actions
+        Actions = push.Actions |> Array.map (fun a ->
+          { Label = a.Label
+            Handler = fun _ -> handleAction a.TriggerKey })
         Dismissible = push.Dismissible }
 
   let private dismissal (push: PushDismissalSchema.Root) =

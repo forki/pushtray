@@ -11,6 +11,10 @@ module Option =
     | None -> func()
     | v -> v
 
+module String =
+  let split separators (str: string) =
+    str.Split(separators)
+
 module Async =
   let map f v =
     async {
@@ -68,3 +72,6 @@ let shellExec (command: string) args =
     finally
       proc.Dispose()
   }
+
+let unixTimeStampToDateTime (timestamp: decimal) =
+  System.DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(float timestamp)

@@ -4,7 +4,7 @@ open System
 
 let usage = """
 usage:
-  pushbullet <access-token> <encrypt-pass> [--show-device]
+  pushbullet <access-token> <encrypt-pass> [--format=<fmt>]
 """
 
 let private parseArgs (argv: string[]) =
@@ -25,9 +25,7 @@ let arg key  =
     None
 
 let argExists key =
-  match args.[key] with
-  | null -> false
-  | v -> v.IsTrue
+  Option.isSome (arg key)
 
 let requiredArg key =
   match arg key with

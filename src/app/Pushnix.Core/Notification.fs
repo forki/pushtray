@@ -5,10 +5,6 @@ open Gdk
 open Notifications
 open Pushnix.Utils
 
-type Format =
-  | Full
-  | Short
-
 type NotificationData =
   { Summary: NotificationText
     Body: NotificationText
@@ -30,8 +26,12 @@ and Action =
   { Label: string
     Handler: (ActionArgs -> unit) }
 
+type Format =
+  | Full
+  | Short
+
 let private format =
-  Cli.arg "--format"
+  Cli.arg "--notify-format"
   |> Option.map (fun s ->
     match s.ToLower() with
     | "full" -> Full
@@ -39,31 +39,40 @@ let private format =
     | _ -> Short)
   |> Option.fold (fun _ v -> v) Short
 
+let private lineWrapWidth = int <| defaultArg (Cli.arg "--notify-wrap") "40"
+let private padWidth = int <| defaultArg (Cli.arg "--notify-padding") "42"
 let private leftPad = "  "
 
 let private wrap width line =
+  Logger.trace <| sprintf "WRAP: %d" width
   let rec loop remaining result words =
     match words with
     | head :: tail ->
       // TODO: Fix HTML tags being included as words
       let (acc, remain) =
-        if String.length head > remaining then (sprintf "%s\n%s" head leftPad, width)
+        if String.length head > remaining then (sprintf "%s\n" head, width)
         else (head + " ", remaining - head.Length)
       loop remain (result + acc) tail
     | _ -> result
   String.split [|' '|] line |> (List.ofArray >> loop width "")
 
 let private pad width line =
+  Logger.trace <| sprintf "Pad: Line = '%s' Length: %d" line line.Length
   (if String.length line < width then
-    line + (String.replicate (width - String.length line) " ")
+    Logger.trace <| sprintf "Pad: %d - %d = %d" width line.Length (width - line.Length)
+    line + (String.replicate (width - line.Length) " ")
   else
+    Logger.trace <| sprintf "Pad: Line %d > Width %d" line.Length width
     line)
   |> sprintf "%s%s" leftPad
 
 let private prettify str =
+  // TODO: Improve this?
+  // Doing a lot of splitting and concatting here so this is probably not optimal
   str
   |> String.split [|'\n'|]
-  |> Array.map (wrap 40 >> pad 42)
+  |> Array.collect (wrap lineWrapWidth >> String.split [|'\n'|])
+  |> Array.map (pad padWidth)
   |> String.concat "\n"
 
 let send data =
@@ -92,5 +101,8 @@ let send data =
           icon )
     [| { Label = "Dismiss"; Handler = fun _ -> notif.Close() } |]
     |> Array.append data.Actions
-    |> Array.iter (fun a -> notif.AddAction(a.Label, a.Label, fun _ args -> a.Handler args))
-    notif.Show())
+    |> Array.iter (fun a ->
+    data.Actions |> Array.iter (fun a ->
+      notif.AddAction(a.Label, a.Label, fun _ args -> a.Handler args))
+    notif.AddAction("Dismiss", "Dissmis", fun _ _ -> notif.Close())
+    notif.Show()))

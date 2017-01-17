@@ -8,9 +8,6 @@ open Pushnix.Utils
 type StreamSchema = JsonProvider<"""../../../schemas/stream.json""", SampleIsList=true>
 type UserSchema = JsonProvider<"""../../../schemas/user.json""">
 type DevicesSchema = JsonProvider<"""../../../schemas/devices.json""">
-type PushMirrorSchema = JsonProvider<"""../../../schemas/push-mirror.json""", SampleIsList=true>
-type PushDismissalSchema = JsonProvider<"""../../../schemas/push-dismissal.json""", SampleIsList=true>
-type PushSmsChangedSchema = JsonProvider<"""../../../schemas/sms-changed.json""", InferTypesFromValues=false>
 
 module Endpoints =
   let stream accessToken = sprintf "wss://stream.pushbullet.com/websocket/%s" accessToken
@@ -81,6 +78,14 @@ module Crypto =
 module private Push =
   open Notification
 
+  type PushMirrorSchema = JsonProvider<"""../../../schemas/push-mirror.json""", SampleIsList=true>
+  type PushDismissalSchema = JsonProvider<"""../../../schemas/push-dismissal.json""", SampleIsList=true>
+  type PushSmsChangedSchema = JsonProvider<"""../../../schemas/sms-changed.json""", InferTypesFromValues=false>
+
+  type PushMirror = PushMirrorSchema.Root
+  type PushDismissal = PushDismissalSchema.Root
+  type PushSmsChanged = PushSmsChangedSchema.Root
+
   type PushType =
     | Mirror
     | Dismissal
@@ -107,7 +112,7 @@ module private Push =
     // TODO
     ()
 
-  let private mirror (push: PushMirrorSchema.Root) =
+  let private handleMirror (push: PushMirror) =
     send
       { Summary = Text(sprintf "%s: %s" (push.ApplicationName.Trim()) (push.Title.Trim()))
         Body = Text(push.Body.Trim())
@@ -119,11 +124,11 @@ module private Push =
             Handler = fun _ -> handleAction a.TriggerKey })
         Dismissible = push.Dismissible }
 
-  let private dismissal (push: PushDismissalSchema.Root) =
+  let private handleDismissal (push: PushDismissal) =
     // TODO
     ()
 
-  let private smsChanged (push: PushSmsChangedSchema.Root) =
+  let private handleSmsChanged (push: PushSmsChanged) =
     push.Notifications |> Array.iter (fun pushNotif ->
       Logger.trace <| sprintf "Notification: Timestamp %s" ((unixTimeStampToDateTime pushNotif.Timestamp).ToString())
       send
@@ -138,9 +143,9 @@ module private Push =
   let handle json =
     Logger.trace <| sprintf "Json: %s" json
     match typeFromJsonString <| json with
-    | Mirror -> mirror <| PushMirrorSchema.Parse(json)
-    | Dismissal -> dismissal <| PushDismissalSchema.Parse(json)
-    | SmsChanged -> smsChanged <| PushSmsChangedSchema.Parse(json)
+    | Mirror -> handleMirror <| PushMirrorSchema.Parse(json)
+    | Dismissal -> handleDismissal <| PushDismissalSchema.Parse(json)
+    | SmsChanged -> handleSmsChanged <| PushSmsChangedSchema.Parse(json)
     | Unknown -> ()
 
 let private handleMessage password json =

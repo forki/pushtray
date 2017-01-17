@@ -4,7 +4,12 @@ open System
 
 let usage = """
 usage:
-  pushbullet <access-token> <encrypt-pass> [--format=<fmt>]
+  pushbullet <access-token> <encrypt-pass> [options]
+
+options:
+  --notify-format=<fmt>   Notification format style (full, short) [default: full]
+  --notify-wrap=<wrap>    Line wrap width [default: 40]
+  --notify-padding=<pad>  Line padding width [default: 45]
 """
 
 let private parseArgs (argv: string[]) =

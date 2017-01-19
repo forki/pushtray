@@ -10,6 +10,7 @@ options:
   --notify-format=<fmt>   Notification format style (full, short) [default: full]
   --notify-wrap=<wrap>    Line wrap width [default: 40]
   --notify-padding=<pad>  Line padding width [default: 45]
+  --trace                 Print all log messages
 """
 
 let private parseArgs (argv: string[]) =

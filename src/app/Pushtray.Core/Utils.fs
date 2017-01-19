@@ -1,6 +1,7 @@
 module Pushtray.Utils
 
 open System
+open System.IO
 open System.Diagnostics
 open FSharp.Data
 open FSharp.Data.HttpRequestHeaders
@@ -72,6 +73,17 @@ let shellExec (command: string) args =
     finally
       proc.Dispose()
   }
+
+let appDataDir =
+  try
+    Environment.GetEnvironmentVariable("XDG_DATA_DIRS").Split(Path.PathSeparator)
+    |> Array.map (fun p -> Path.Combine [| p; "pushtray" |])
+    |> Array.filter Directory.Exists
+    |> Array.head
+    |> Some
+  with :? System.ArgumentException as ex ->
+    Logger.debug <| sprintf "DataDir: %s" ex.Message
+    None
 
 let unixTimeStampToDateTime (timestamp: decimal) =
   System.DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(float timestamp)

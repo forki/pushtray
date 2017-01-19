@@ -15,7 +15,7 @@ let private onTrayIconPopup args =
   popupMenu.Popup()
 
 let create() =
-  let trayIcon = new StatusIcon(new Pixbuf("assets/icons/pushbullet-indicator-light.svg"))
+  let trayIcon = StatusIcon.NewFromIconName("pushbullet-light")
   trayIcon.TooltipText <- "Pushbullet"
   trayIcon.Visible <- true
   trayIcon.PopupMenu.Add(onTrayIconPopup)

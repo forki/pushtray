@@ -1,7 +1,8 @@
 module Pushtray.TrayIcon
 
-open Gtk;
-open Gdk;
+open System.IO
+open Gtk
+open Gdk
 
 let private onTrayIconPopup args =
   let menuItemQuit = new ImageMenuItem("Quit")
@@ -15,7 +16,15 @@ let private onTrayIconPopup args =
   popupMenu.Popup()
 
 let create() =
-  let trayIcon = StatusIcon.NewFromIconName("pushbullet-light")
+  let trayIcon =
+    Utils.appDataDir
+    |> Option.map (fun p -> Path.Combine [| p; "icons/scalable/pushbullet-light.svg" |])
+    |> Option.filter File.Exists
+    |> function
+    | Some path -> new StatusIcon(new Pixbuf(path))
+    | None ->
+      Logger.warn "Pushbullet icon was not found, falling back to stock icon"
+      StatusIcon.NewFromIconName("phone")
   trayIcon.TooltipText <- "Pushbullet"
   trayIcon.Visible <- true
   trayIcon.PopupMenu.Add(onTrayIconPopup)

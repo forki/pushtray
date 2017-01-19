@@ -58,7 +58,8 @@ Target "Clean" (fun _ ->
 // TODO
 Target "Release" ignore
 
-"Build"
+"Clean"
+  ==> "Build"
   ==> "Repack"
   ==> "Release"
 

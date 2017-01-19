@@ -7,17 +7,18 @@ usage:
   pushbullet <access-token> <encrypt-pass> [options]
 
 options:
-  --notify-format=<fmt>   Notification format style (full, short) [default: full]
-  --notify-wrap=<wrap>    Line wrap width [default: 40]
-  --notify-padding=<pad>  Line padding width [default: 45]
-  --trace                 Print all log messages
+  --notify-format <fmt>       Select the notification format style (full, short)
+  --notify-line-wrap <wrap>   Set the line wrap width (i.e. the maximum width)
+  --notify-line-pad <pad>     Set the minimum line width
+  --icon-style <style>        Select tray icon style (light, dark)
+  --trace                     Print all log messages
 """
 
 let private parseArgs (argv: string[]) =
   let docopt = new DocoptNet.Docopt()
   docopt.PrintExit.Add(fun _ ->
     printfn "%s" <| usage
-    System.Environment.Exit(1))
+    exit 1)
   docopt.Apply(usage, argv, help = false, exit = true)
 
 let args = parseArgs <| System.Environment.GetCommandLineArgs().[1..]
@@ -38,5 +39,5 @@ let requiredArg key =
   | Some v -> v
   | None -> failwith (sprintf "%s argument is required" key)
 
-let argWithDefault defaultValue key =
+let argWithDefault key defaultValue =
   defaultArg (arg key) defaultValue

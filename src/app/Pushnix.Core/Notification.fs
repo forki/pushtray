@@ -19,6 +19,7 @@ and NotificationText =
   | TextWithFormat of (string * (string -> string))
 
 and Icon =
+  | Stock of string
   | Base64 of string
   | File of string
 
@@ -44,7 +45,6 @@ let private padWidth = int <| defaultArg (Cli.arg "--notify-padding") "42"
 let private leftPad = "  "
 
 let private wrap width line =
-  Logger.trace <| sprintf "WRAP: %d" width
   let rec loop remaining result words =
     match words with
     | head :: tail ->
@@ -57,18 +57,13 @@ let private wrap width line =
   String.split [|' '|] line |> (List.ofArray >> loop width "")
 
 let private pad width line =
-  Logger.trace <| sprintf "Pad: Line = '%s' Length: %d" line line.Length
   (if String.length line < width then
-    Logger.trace <| sprintf "Pad: %d - %d = %d" width line.Length (width - line.Length)
     line + (String.replicate (width - line.Length) " ")
   else
-    Logger.trace <| sprintf "Pad: Line %d > Width %d" line.Length width
     line)
   |> sprintf "%s%s" leftPad
 
 let private prettify str =
-  // TODO: Improve this?
-  // Doing a lot of splitting and concatting here so this is probably not optimal
   str
   |> String.split [|'\n'|]
   |> Array.collect (wrap lineWrapWidth >> String.split [|'\n'|])
@@ -76,9 +71,6 @@ let private prettify str =
   |> String.concat "\n"
 
 let send data =
-  let text = function
-    | Text(str) -> prettify str
-    | TextWithFormat(str, format) -> format <| prettify str
   let footer =
     match format with
     | Full ->
@@ -88,21 +80,23 @@ let send data =
       |> prettify
       |> sprintf "\n<i>%s</i>"
     | Short -> ""
-  let icon =
-    match data.Icon with
-    | Base64(str) -> new Pixbuf(Convert.FromBase64String(str))
-    | File(path) -> new Pixbuf(path)
+
+  let formatText = function
+    | Text(str) -> prettify str
+    | TextWithFormat(str, format) -> format <| prettify str
+  let summary = formatText data.Summary
+  let body = formatText data.Body + footer
 
   Gtk.Application.Invoke(fun _ _ ->
-    let notif =
-      new Notification
-        ( text data.Summary,
-          text data.Body + footer,
-          icon )
-    [| { Label = "Dismiss"; Handler = fun _ -> notif.Close() } |]
+    let notification =
+      match data.Icon with
+      | Stock(str) -> new Notification(summary, body, str)
+      | Base64(str) -> new Notification(summary, body, new Pixbuf(Convert.FromBase64String(str)))
+      | File(path) -> new Notification(summary, body, new Pixbuf(path))
+
+    [| { Label = "Dismiss"; Handler = fun _ -> notification.Close() } |]
     |> Array.append data.Actions
     |> Array.iter (fun a ->
-    data.Actions |> Array.iter (fun a ->
-      notif.AddAction(a.Label, a.Label, fun _ args -> a.Handler args))
-    notif.AddAction("Dismiss", "Dissmis", fun _ _ -> notif.Close())
-    notif.Show()))
+        notification.AddAction(a.Label, a.Label, fun _ args -> a.Handler args))
+
+    notification.Show())

@@ -136,7 +136,7 @@ module private Push =
           Body = Text(pushNotif.Body.Trim())
           DeviceInfo = deviceInfo push.SourceDeviceIden
           Timestamp = Some <| (unixTimeStampToDateTime pushNotif.Timestamp).ToString("hh:mm tt")
-          Icon = Notification.File("assets/images/chip_phone.png")
+          Icon = Notification.Stock("smartphone-symbolic")
           Actions = [||]
           Dismissible = true })
 

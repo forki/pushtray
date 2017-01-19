@@ -1,4 +1,4 @@
-module Pushnix.Logger
+module Pushtray.Logger
 
 open System
 

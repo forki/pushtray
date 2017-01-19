@@ -1,4 +1,4 @@
-module Pushnix.TrayIcon
+module Pushtray.TrayIcon
 
 open Gtk;
 open Gdk;

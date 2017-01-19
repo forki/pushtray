@@ -1,9 +1,9 @@
-module Pushnix.Notification
+module Pushtray.Notification
 
 open System
 open Gdk
 open Notifications
-open Pushnix.Utils
+open Pushtray.Utils
 
 type NotificationData =
   { Summary: NotificationText

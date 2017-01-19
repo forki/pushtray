@@ -1,9 +1,9 @@
-module Pushnix.Pushbullet
+module Pushtray.Pushbullet
 
 open FSharp.Data
 open FSharp.Data.JsonExtensions
 open WebSocketSharp
-open Pushnix.Utils
+open Pushtray.Utils
 
 type StreamSchema = JsonProvider<"""../../../schemas/stream.json""", SampleIsList=true>
 type UserSchema = JsonProvider<"""../../../schemas/user.json""">

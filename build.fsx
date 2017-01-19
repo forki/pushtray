@@ -3,7 +3,7 @@
 open Fake
 open Fake.FileUtils
 
-let projectName = "Pushnix"
+let projectName = "Pushtray"
 let solution = sprintf "%s.sln" projectName
 let binary = sprintf "%s.exe" <| projectName.ToLower()
 let version = "0.1.0";

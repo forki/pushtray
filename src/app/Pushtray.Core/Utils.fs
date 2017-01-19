@@ -1,4 +1,4 @@
-module Pushnix.Utils
+module Pushtray.Utils
 
 open System
 open System.Diagnostics

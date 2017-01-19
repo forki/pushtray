@@ -1,5 +1,5 @@
 open Gtk
-open Pushnix
+open Pushtray
 
 [<EntryPoint>]
 let main argv =

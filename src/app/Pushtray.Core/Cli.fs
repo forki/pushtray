@@ -1,4 +1,4 @@
-module Pushnix.Cli
+module Pushtray.Cli
 
 open System
 

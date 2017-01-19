@@ -32,16 +32,13 @@ type Format =
   | Short
 
 let private format =
-  Cli.arg "--notify-format"
-  |> Option.map (fun s ->
-    match s.ToLower() with
-    | "full" -> Full
-    | "short" -> Short
-    | _ -> Short)
-  |> Option.fold (fun _ v -> v) Short
+  match Cli.argWithDefault "--notify-format" "--short" with
+  | "full" -> Full
+  | "short" -> Short
+  | str -> Logger.warn <| sprintf "Invalid notification format '%s'" str; Short
 
-let private lineWrapWidth = int <| defaultArg (Cli.arg "--notify-wrap") "40"
-let private padWidth = int <| defaultArg (Cli.arg "--notify-padding") "42"
+let private lineWrapWidth = int <| Cli.argWithDefault "--notify-line-wrap" "40"
+let private linePadWidth = int <| Cli.argWithDefault "--notify-line-pad" "45"
 let private leftPad = "  "
 
 let private wrap width line =
@@ -67,7 +64,7 @@ let private prettify str =
   str
   |> String.split [|'\n'|]
   |> Array.collect (wrap lineWrapWidth >> String.split [|'\n'|])
-  |> Array.map (pad padWidth)
+  |> Array.map (pad linePadWidth)
   |> String.concat "\n"
 
 let send data =

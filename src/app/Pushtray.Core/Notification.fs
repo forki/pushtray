@@ -94,6 +94,8 @@ let send data =
     [| { Label = "Dismiss"; Handler = fun _ -> notification.Close() } |]
     |> Array.append data.Actions
     |> Array.iter (fun a ->
-        notification.AddAction(a.Label, a.Label, fun _ args -> a.Handler args))
+      Logger.trace <| sprintf "Notification: Adding action '%s'" a.Label
+      notification.AddAction(a.Label, a.Label, fun _ args -> a.Handler args))
 
+    Logger.info <| sprintf "Notification: Summary = '%s' Body = '%s'" notification.Summary notification.Body
     notification.Show())

@@ -157,7 +157,7 @@ let private handleMessage password json =
       match message.Push with
       | Some push ->
         if push.Encrypted then Option.iter Push.handle <| Crypto.decrypt password push.Ciphertext
-        else Logger.info "Pushbullet: Received unencrypted push"
+        else Logger.warn "Received unencrypted push"
       | None -> Logger.error "Push message received with no contents"
     | "nop" -> ()
     | t -> Logger.warn <| sprintf "Unknown Message: type=%s" t

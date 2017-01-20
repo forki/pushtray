@@ -57,31 +57,13 @@ module Http =
         body = TextRequest body )
     |> Async.Catch
 
-let shellExec (command: string) args =
-  let startInfo =
-    ProcessStartInfo
-      ( FileName = command,
-        Arguments = args,
-        UseShellExecute = false,
-        CreateNoWindow = true,
-        WindowStyle = ProcessWindowStyle.Hidden )
-  let proc = new Process(StartInfo = startInfo, EnableRaisingEvents = true)
-  async {
-    try
-      proc.Start() |> ignore
-      return proc.ExitCode
-    finally
-      proc.Dispose()
-  }
-
 let appDataDir =
   try
-    Environment.GetEnvironmentVariable("XDG_DATA_DIRS").Split(Path.PathSeparator)
-    |> Array.map (fun p -> Path.Combine [| p; "pushtray" |])
-    |> Array.filter Directory.Exists
-    |> Array.head
+    Path.Combine
+      [| Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)
+         "pushtray" |]
     |> Some
-  with :? System.ArgumentException as ex ->
+  with ex ->
     Logger.debug <| sprintf "DataDir: %s" ex.Message
     None
 

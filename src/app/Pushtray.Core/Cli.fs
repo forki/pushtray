@@ -2,17 +2,16 @@ module Pushtray.Cli
 
 open System
 
-let usage = """
+let usage = "\
 usage:
-  pushbullet <access-token> <encrypt-pass> [options]
+  pushtray <access-token> <encrypt-pass> [options]
 
 options:
   --notify-format <fmt>       Select the notification format style (full, short)
   --notify-line-wrap <wrap>   Set the line wrap width (i.e. the maximum width)
   --notify-line-pad <pad>     Set the minimum line width
   --icon-style <style>        Select tray icon style (light, dark)
-  --trace                     Print all log messages
-"""
+  --trace                     Print all log messages"
 
 let private parseArgs (argv: string[]) =
   let docopt = new DocoptNet.Docopt()

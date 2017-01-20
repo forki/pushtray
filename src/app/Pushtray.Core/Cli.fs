@@ -22,16 +22,19 @@ let private parseArgs (argv: string[]) =
 
 let args = parseArgs <| System.Environment.GetCommandLineArgs().[1..]
 
-let arg key  =
+let private valueOf func key =
   if args.ContainsKey(key) then
     match args.[key] with
     | null -> None
-    | v -> Some <| v.ToString()
+    | v -> Some <| func v
   else
     None
 
+let arg key =
+  key |> valueOf (fun v -> v.ToString())
+
 let argExists key =
-  Option.isSome (arg key)
+  key |> valueOf (fun v -> v.IsTrue) |> Option.exists id
 
 let requiredArg key =
   match arg key with

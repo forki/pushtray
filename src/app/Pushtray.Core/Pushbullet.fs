@@ -1,5 +1,6 @@
 module Pushtray.Pushbullet
 
+open System.Threading
 open FSharp.Data
 open FSharp.Data.JsonExtensions
 open WebSocketSharp
@@ -150,7 +151,7 @@ module private Push =
 
 let private handleMessage password json =
   try
-    Logger.trace <| sprintf "Raw Message: %s" json
+    Logger.trace <| sprintf "Message [Raw]: %s" json
     let message = StreamSchema.Parse(json)
     match message.Type with
     | "push" ->
@@ -160,17 +161,26 @@ let private handleMessage password json =
         else Logger.warn "Received unencrypted push"
       | None -> Logger.error "Push message received with no contents"
     | "nop" -> ()
-    | t -> Logger.warn <| sprintf "Unknown Message: type=%s" t
+    | t -> Logger.warn <| sprintf "Message [Unknown]: type=%s" t
   with ex ->
     Logger.warn <| sprintf "Failed to handle message (%s)" ex.Message
 
-let connect password =
+let rec connect password =
   Logger.trace "Printing devices..."
-  devices |> Array.iter (fun d -> Logger.trace <| sprintf "Device [%s %s] %s" d.Manufacturer d.Model d.Nickname)
+  devices |> Array.iter (fun d -> Logger.info <| sprintf "Device [%s %s] %s" d.Manufacturer d.Model d.Nickname)
 
-  // Connect to event stream
-  Logger.trace <| sprintf "Connecting to stream %s" (Endpoints.stream accessToken)
+  Logger.info <| sprintf "Pushbullet: Connecting to stream %s" (Endpoints.stream accessToken)
   let ws = new WebSocket(Endpoints.stream accessToken)
-  ws.OnMessage.Add(fun e -> handleMessage password e.Data)
-  ws.OnError.Add(fun e -> Logger.error e.Message)
-  ws.Connect()
+  ws.OnMessage.Add(fun e ->
+    handleMessage password e.Data)
+  ws.OnError.Add(fun e ->
+    Logger.error e.Message)
+  ws.OnOpen.Add(fun _ ->
+    Logger.info "Pushbullet: Opening websocket connection")
+  ws.OnClose.Add  (fun e ->
+    Logger.info <| sprintf "Pushbullet: Connection closed [Code %d]" e.Code
+    if e.Code <> uint16 CloseStatusCode.Away then
+      Logger.info "Pushbullet: Attempting to reconnect..."
+      Thread.Sleep(2500)
+      connect password)
+  ws.ConnectAsync()

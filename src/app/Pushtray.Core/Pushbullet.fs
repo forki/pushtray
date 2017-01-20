@@ -1,12 +1,9 @@
 module Pushtray.Pushbullet
 
-open System.Threading
 open FSharp.Data
 open FSharp.Data.JsonExtensions
-open WebSocketSharp
 open Pushtray.Utils
 
-type StreamSchema = JsonProvider<"""../../../schemas/stream.json""", SampleIsList=true>
 type UserSchema = JsonProvider<"""../../../schemas/user.json""">
 type DevicesSchema = JsonProvider<"""../../../schemas/devices.json""">
 
@@ -76,7 +73,7 @@ module Crypto =
       Logger.debug <| sprintf "Pushbullet: Decryption failure (%s)" ex.Message
       None
 
-module private Push =
+module Push =
   open Notification
 
   type PushMirrorSchema = JsonProvider<"""../../../schemas/push-mirror.json""", SampleIsList=true>
@@ -149,38 +146,67 @@ module private Push =
     | SmsChanged -> handleSmsChanged <| PushSmsChangedSchema.Parse(json)
     | Unknown -> ()
 
-let private handleMessage password json =
-  try
-    Logger.trace <| sprintf "Message [Raw]: %s" json
-    let message = StreamSchema.Parse(json)
-    match message.Type with
-    | "push" ->
-      match message.Push with
-      | Some push ->
-        if push.Encrypted then Option.iter Push.handle <| Crypto.decrypt password push.Ciphertext
-        else Logger.warn "Received unencrypted push"
-      | None -> Logger.error "Push message received with no contents"
-    | "nop" -> ()
-    | t -> Logger.warn <| sprintf "Message [Unknown]: type=%s" t
-  with ex ->
-    Logger.warn <| sprintf "Failed to handle message (%s)" ex.Message
+module Stream =
+  open System.Threading
+  open System.Timers
+  open WebSocketSharp
 
-let rec connect password =
-  Logger.trace "Printing devices..."
-  devices |> Array.iter (fun d -> Logger.info <| sprintf "Device [%s %s] %s" d.Manufacturer d.Model d.Nickname)
+  type StreamSchema = JsonProvider<"""../../../schemas/stream.json""", SampleIsList=true>
 
-  Logger.info <| sprintf "Pushbullet: Connecting to stream %s" (Endpoints.stream accessToken)
-  let ws = new WebSocket(Endpoints.stream accessToken)
-  ws.OnMessage.Add(fun e ->
-    handleMessage password e.Data)
-  ws.OnError.Add(fun e ->
-    Logger.error e.Message)
-  ws.OnOpen.Add(fun _ ->
-    Logger.info "Pushbullet: Opening websocket connection")
-  ws.OnClose.Add  (fun e ->
-    Logger.info <| sprintf "Pushbullet: Connection closed [Code %d]" e.Code
-    if e.Code <> uint16 CloseStatusCode.Away then
-      Logger.info "Pushbullet: Attempting to reconnect..."
-      Thread.Sleep(2500)
-      connect password)
-  ws.ConnectAsync()
+  let private handlePush password (push: StreamSchema.Push option) =
+    match push with
+    | Some push ->
+      if push.Encrypted then
+        Option.iter Push.handle <| Crypto.decrypt password push.Ciphertext
+      else
+        Logger.warn "Received unencrypted push"
+    | None -> Logger.error "Push message received with no contents"
+
+  let private handleNop (heartbeat: Timer) =
+    Logger.trace "Pushbullet: Resetting heartbeat timer"
+    heartbeat.Stop()
+    heartbeat.Start()
+
+  let private handleMessage heartbeat password json =
+    try
+      Logger.trace <| sprintf "Pushbullet: Message[Raw] %s" json
+      let message = StreamSchema.Parse(json)
+      match message.Type with
+      | "push" -> handlePush password message.Push
+      | "nop" -> handleNop heartbeat
+      | t -> Logger.debug <| sprintf "Pushbullet: Message[Unknown] type=%s" t
+    with ex ->
+      Logger.warn <| sprintf "Failed to handle message (%s)" ex.Message
+
+  let private handleHeartbeatMissed (websocket: WebSocket) reconnect =
+    Logger.trace "Pushbullet: Heartbeat missed"
+    reconnect()
+
+  let rec connect password =
+    Logger.trace "Pushbullet: Printing devices..."
+    devices |> Array.iter (fun d -> Logger.info <| sprintf "Device [%s %s] %s" d.Manufacturer d.Model d.Nickname)
+
+    Logger.info <| sprintf "Connecting to stream %s" (Endpoints.stream accessToken)
+    let websocket = new WebSocket(Endpoints.stream accessToken)
+
+    let reconnect = fun _ ->
+      Logger.trace "Pushbullet: Ensuring stream connection is closed"
+      lock websocket (fun _ -> websocket.Close())
+      Logger.trace "Pushbullet: Attempting to reconnect to stream..."
+      connect password
+
+    // After 95 seconds of no activity (3 missed nops) we'll assume we need to restart
+    let heartbeatTimer = new Timer(95000.0)
+    heartbeatTimer.Elapsed.Add(fun _ -> handleHeartbeatMissed websocket reconnect)
+    heartbeatTimer.AutoReset <- false
+
+    websocket.OnMessage.Add(fun e -> handleMessage heartbeatTimer password e.Data)
+    websocket.OnError.Add(fun e -> Logger.error e.Message)
+    websocket.OnOpen.Add(fun _ -> Logger.trace "Pushbullet: Opening stream connection")
+    websocket.OnClose.Add  (fun e ->
+      Logger.debug <| sprintf "Pushbullet: Stream connection closed [Code %d]" e.Code
+      if e.Code <> uint16 CloseStatusCode.Away then
+        Thread.Sleep(5000)
+        reconnect())
+
+    websocket.ConnectAsync()

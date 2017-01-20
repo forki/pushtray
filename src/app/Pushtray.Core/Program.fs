@@ -6,7 +6,7 @@ open Pushtray
 [<EntryPoint>]
 let main argv =
   Application.Init()
-  Pushbullet.connect <| Cli.requiredArg "<encrypt-pass>"
+  Pushbullet.Stream.connect <| Cli.requiredArg "<encrypt-pass>"
 
   // Exit gracefully after receiving SIGINT
   Async.Start(async {

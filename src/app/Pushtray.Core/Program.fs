@@ -3,8 +3,6 @@ open Mono.Unix.Native
 open Gtk
 open Pushtray
 
-open System.Threading
-
 [<EntryPoint>]
 let main argv =
   if Cli.argExists "--trace" then Logger.minLogLevel <- Logger.LogLevel.Trace
@@ -22,5 +20,4 @@ let main argv =
 
   TrayIcon.create()
   Application.Run()
-
   0

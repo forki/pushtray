@@ -2,7 +2,7 @@ module Pushtray.TrayIcon
 
 open System.IO
 open Gtk
-open Gdk
+open Pushtray.Utils
 
 type IconStyle =
   | Light
@@ -33,11 +33,11 @@ let create() =
     |> sprintf "icons/%s"
 
   let trayIcon =
-    Utils.appDataDir
+    appDataDir
     |> Option.map (fun p -> Path.Combine [| p; iconPath |])
     |> Option.filter File.Exists
     |> function
-    | Some path -> new StatusIcon(new Pixbuf(path))
+    | Some path -> new StatusIcon(new Gdk.Pixbuf(path))
     | None ->
       Logger.warn "Pushbullet icon was not found, falling back to generic icon"
       StatusIcon.NewFromIconName("phone")

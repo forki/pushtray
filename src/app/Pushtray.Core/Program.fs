@@ -9,12 +9,13 @@ let main argv =
   Pushbullet.Stream.connect <| Cli.requiredArg "<encrypt-pass>"
 
   // Exit gracefully after receiving SIGINT
-  Async.Start(async {
-    if (new UnixSignal(Signum.SIGINT)).WaitOne() then
-      Logger.info "Received SIGINT, exiting..."
-      Application.Quit()
-      exit 1
-  })
+  Async.Start <|
+    async {
+      if (new UnixSignal(Signum.SIGINT)).WaitOne() then
+        Logger.info "Received SIGINT, exiting..."
+        Application.Quit()
+        exit 1
+    }
 
   TrayIcon.create()
   Application.Run()

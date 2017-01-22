@@ -111,7 +111,7 @@ module Push =
     ()
 
   let private handleMirror (push: PushMirror) =
-    send
+    Notification.send
       { Summary = Text(sprintf "%s: %s" (push.ApplicationName.Trim()) (push.Title.Trim()))
         Body = Text(push.Body.Trim())
         DeviceInfo = deviceInfo push.SourceDeviceIden
@@ -129,7 +129,7 @@ module Push =
   let private handleSmsChanged (push: PushSmsChanged) =
     push.Notifications |> Array.iter (fun pushNotif ->
       Logger.trace <| sprintf "Notification: Timestamp %s" ((unixTimeStampToDateTime pushNotif.Timestamp).ToString())
-      send
+      Notification.send
         { Summary = Text(sprintf "%s" <| pushNotif.Title.Trim())
           Body = Text(pushNotif.Body.Trim())
           DeviceInfo = deviceInfo push.SourceDeviceIden
@@ -183,16 +183,16 @@ module Stream =
     reconnect()
 
   let rec connect password =
-    Logger.trace "Pushbullet: Printing devices..."
+    Logger.trace "Pushbullet: Printing devices"
     devices |> Array.iter (fun d -> Logger.info <| sprintf "Device [%s %s] %s" d.Manufacturer d.Model d.Nickname)
 
     Logger.info <| sprintf "Connecting to stream %s" (Endpoints.stream accessToken)
     let websocket = new WebSocket(Endpoints.stream accessToken)
 
     let reconnect = fun _ ->
-      Logger.trace "Pushbullet: Ensuring stream connection is closed"
-      lock websocket (fun _ -> websocket.Close())
-      Logger.trace "Pushbullet: Attempting to reconnect to stream..."
+      Logger.trace "Pushbullet: Closing stream connection"
+      lock websocket (fun _ -> try websocket.Close(CloseStatusCode.Normal) with ex -> Logger.debug ex.Message)
+      Logger.trace "Pushbullet: Reconnecting"
       connect password
 
     // After 95 seconds of no activity (3 missed nops) we'll assume we need to restart
@@ -203,9 +203,12 @@ module Stream =
     websocket.OnMessage.Add(fun e -> handleMessage heartbeatTimer password e.Data)
     websocket.OnError.Add(fun e -> Logger.error e.Message)
     websocket.OnOpen.Add(fun _ -> Logger.trace "Pushbullet: Opening stream connection")
-    websocket.OnClose.Add  (fun e ->
+    websocket.OnClose.Add (fun e ->
       Logger.debug <| sprintf "Pushbullet: Stream connection closed [Code %d]" e.Code
-      if e.Code <> uint16 CloseStatusCode.Away then
+      match LanguagePrimitives.EnumOfValue<uint16, CloseStatusCode> e.Code with
+      | CloseStatusCode.Normal | CloseStatusCode.Away -> ()
+      | _ ->
+        Logger.trace "Pushbullet: Attempting to reconnect in 5 seconds"
         Thread.Sleep(5000)
         reconnect())
 

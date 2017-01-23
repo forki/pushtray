@@ -1,0 +1,23 @@
+[
+  {
+    "type": "mirror",
+    "application_name": "Pushbullet",
+    "body": "If you see this on your computer, Android-to-PC notifications are working!\n",
+    "client_version": 125,
+    "dismissible": true,
+    "has_root": false,
+    "icon": "(base64_encoded_jpeg)",
+    "notification_id": "-8",
+    "notification_tag": null,
+    "package_name": "com.pushbullet.android",
+    "source_device_iden": "ujpah72o0sjAoRtnM0jc",
+    "source_user_iden": "ujpah72o0",
+    "title": "Mirroring test",
+    "actions": [
+      {
+        "label": "Done",
+        "trigger_key": "com.pushbullet.android_3_null_Done"
+      }
+    ]
+  }
+]

@@ -3,20 +3,25 @@ open Mono.Unix.Native
 open Gtk
 open Pushtray
 
-[<EntryPoint>]
-let main argv =
-  Application.Init()
-  Pushbullet.Stream.connect <| Cli.requiredArg "<encrypt-pass>"
-
-  // Exit gracefully after receiving SIGINT
+let private exitOnSignal (signum: Signum) =
   Async.Start <|
     async {
-      if (new UnixSignal(Signum.SIGINT)).WaitOne() then
-        Logger.info "Received SIGINT, exiting..."
+      if (new UnixSignal(signum)).WaitOne() then
+        Logger.info <| sprintf "Received %s, exiting..." (System.Enum.GetName(typeof<Signum>, signum))
         Application.Quit()
         exit 1
     }
 
+[<EntryPoint>]
+let main argv =
+  Pushbullet.Stream.connect()
+
+  Application.Init()
   TrayIcon.create()
+
+  // Ctrl-c doesn't seem to do anything after Application.Run() is called
+  // so we'll handle SIGINT explicitly
+  exitOnSignal Signum.SIGINT
+
   Application.Run()
   0

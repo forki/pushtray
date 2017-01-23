@@ -20,7 +20,7 @@ let private logLevelColors =
   |> Map.ofList
 
 let minLogLevel =
-  match (Cli.argWithDefault "--log-level" "").ToLower() with
+  match (Cli.argWithDefault "--log" "").ToLower() with
   | "trace" -> LogLevel.Trace
   | "info" -> LogLevel.Info
   | "debug" -> LogLevel.Debug

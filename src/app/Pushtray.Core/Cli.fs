@@ -7,11 +7,11 @@ usage:
   pushtray <access-token> <encrypt-pass> [options]
 
 options:
-  --notify-format <fmt>       Set notification format style (full, short)
-  --notify-line-wrap <wrap>   Set the line wrap width of notifications (i.e. the maximum width)
-  --notify-line-pad <pad>     Set the minimum line width of notifications
-  --icon-style <style>        Customize the tray icon style (light, dark)
-  --log-level <level>         Enable all logging messages at <level> and higher"
+  --notify-format=<fmt>       Set notification format style (full, short)
+  --notify-line-wrap=<wrap>   Set the line wrap width of notifications (i.e. the maximum width)
+  --notify-line-pad=<pad>     Set the minimum line width of notifications
+  --icon-style=<style>        Customize the tray icon style (light, dark)
+  --log=<log-level>           Enable all logging messages at <log-level> and higher"
 
 let private parseArgs (argv: string[]) =
   let docopt = new DocoptNet.Docopt()

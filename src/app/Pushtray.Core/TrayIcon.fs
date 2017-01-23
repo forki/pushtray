@@ -37,11 +37,11 @@ let create() =
     |> Option.map (fun p -> Path.Combine [| p; iconPath |])
     |> Option.filter File.Exists
     |> function
-    | Some path -> new StatusIcon(new Gdk.Pixbuf(path))
+    | Some path -> new StatusIcon(path)
     | None ->
       Logger.warn "Pushbullet icon was not found, falling back to generic icon"
       StatusIcon.NewFromIconName("phone")
 
-  trayIcon.TooltipText <- "Pushbullet"
+  trayIcon.TooltipText <- "Pushtray"
   trayIcon.Visible <- true
   trayIcon.PopupMenu.Add(onTrayIconPopup)

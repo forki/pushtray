@@ -4,6 +4,7 @@
     "source_device_iden": "ujDK3kNiwqysjz7O3P0Jl6",
     "source_user_iden": "ujDK3kNiwqy",
     "package_name": "com.pushbullet.android",
-    "notification_id": "3"
+    "notification_id": "3",
+    "notification_tag": null
   }
 ]

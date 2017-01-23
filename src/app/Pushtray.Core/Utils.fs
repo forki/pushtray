@@ -23,12 +23,13 @@ module Async =
       return f value
     }
 
-  let choice success errorMessage (asyncChoice: Async<Choice<string, exn>>) =
+  let choice success (asyncChoice: Async<Choice<string, exn>>) =
     asyncChoice |> map (fun choice ->
       match choice with
       | Choice1Of2 result -> success result
-      | Choice2Of2 (ex: Exception) -> Logger.debug <| sprintf "AsyncChoice: %s" ex.Message; None
-      |> Option.orElse (fun _ -> Logger.error errorMessage; None))
+      | Choice2Of2 (ex: Exception) ->
+        Logger.debug <| sprintf "AsyncChoice: %s" ex.Message
+        None)
 
 module Http =
   let get accessToken url =
@@ -49,7 +50,7 @@ module Http =
         headers = [ Accept HttpContentTypes.Json; "Access-Token", accessToken ])
     |> Async.Catch
 
-  let post accessToken body url =
+  let post accessToken url body =
     Logger.trace <| sprintf "RequestAsync POST: %s (Body = %s)" url body
     Http.AsyncRequestString
       ( url,

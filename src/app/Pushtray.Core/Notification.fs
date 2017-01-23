@@ -12,7 +12,7 @@ type NotificationData =
     Timestamp: string option
     Icon: Icon
     Actions: Action[]
-    Dismissible: bool }
+    Dismissible: (unit -> Async<string option>) option }
 
 and NotificationText =
   | Text of string
@@ -45,13 +45,13 @@ let private wrap width line =
   let rec loop remaining result words =
     match words with
     | head :: tail ->
-      // TODO: Fix HTML tags being included as words
       let (acc, remain) =
         if String.length head > remaining then (sprintf "%s\n" head, width)
         else (head + " ", remaining - head.Length)
       loop remain (result + acc) tail
     | _ -> result
-  String.split [|' '|] line |> (List.ofArray >> loop width "")
+  String.split [|' '|] line
+  |> (List.ofArray >> loop width "")
 
 let private pad width line =
   (if String.length line < width then
@@ -66,6 +66,12 @@ let private prettify str =
   |> Array.collect (wrap lineWrapWidth >> String.split [|'\n'|])
   |> Array.map (pad linePadWidth)
   |> String.concat "\n"
+
+let private dismiss asyncRequest (notification: Notification) (args: ActionArgs) =
+  asyncRequest()
+  |> Async.Ignore
+  |> Async.Start
+  notification.Close()
 
 let send data =
   let footer =
@@ -91,11 +97,17 @@ let send data =
       | Base64(str) -> new Notification(summary, body, new Pixbuf(Convert.FromBase64String(str)))
       | File(path) -> new Notification(summary, body, new Pixbuf(path))
 
-    [| { Label = "Dismiss"; Handler = fun _ -> notification.Close() } |]
+    match data.Dismissible with
+    | Some(request) -> [| { Label = "Dismiss"; Handler = (dismiss request notification) } |]
+    | None -> [||]
     |> Array.append data.Actions
     |> Array.iter (fun a ->
       Logger.trace <| sprintf "Notification: Adding action '%s'" a.Label
       notification.AddAction(a.Label, a.Label, fun _ args -> a.Handler args))
 
-    Logger.info <| sprintf "Notification: Summary = '%s' Body = '%s'" notification.Summary notification.Body
+    Logger.info <|
+      sprintf "Notification: Summary = '%s' Body = '%s'"
+        (notification.Summary.Trim())
+        (notification.Body.Trim())
+
     notification.Show())

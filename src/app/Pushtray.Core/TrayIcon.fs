@@ -37,7 +37,7 @@ let create() =
     |> Option.map (fun p -> Path.Combine [| p; iconPath |])
     |> Option.filter File.Exists
     |> function
-    | Some path -> new StatusIcon(path)
+    | Some path -> new StatusIcon(new Gdk.Pixbuf(path))
     | None ->
       Logger.warn "Pushbullet icon was not found, falling back to generic icon"
       StatusIcon.NewFromIconName("phone")

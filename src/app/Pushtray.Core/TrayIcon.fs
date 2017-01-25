@@ -33,13 +33,15 @@ let create() =
     |> sprintf "icons/%s"
 
   let trayIcon =
-    appDataDir
-    |> Option.map (fun p -> Path.Combine [| p; iconPath |])
-    |> Option.filter File.Exists
+    appDataDirs
+    |> Option.bind (fun paths ->
+      paths
+      |> List.map (fun p -> Path.Combine [| p; iconPath |])
+      |> List.tryFind File.Exists)
     |> function
     | Some path -> new StatusIcon(new Gdk.Pixbuf(path))
     | None ->
-      Logger.warn "Pushbullet icon was not found, falling back to generic icon"
+      Logger.warn "Tray icon not found, falling back to generic icon"
       StatusIcon.NewFromIconName("phone")
 
   trayIcon.TooltipText <- "Pushtray"

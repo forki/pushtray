@@ -19,7 +19,6 @@ let private encryptPass = Cli.requiredArg "<encrypt-pass>"
 let user =
   Http.get accessToken Endpoints.user
   |> Option.bind (fun result ->
-    printfn "USER: %s" result
     try Some <| UserSchema.Parse(result)
     with ex -> Logger.error ex.Message; None)
   |> function
@@ -100,7 +99,7 @@ module Ephemeral =
       | "dismissal" -> Dismissal
       | "sms_changed" -> SmsChanged
       | str ->
-        Logger.warn <| sprintf "Unknown push type=%s %s" str json
+        Logger.debug <| sprintf "Unknown push type=%s %s" str json
         Unknown
     with ex ->
       Logger.error <| sprintf "Failed to detect push type (%s)" ex.Message
@@ -149,12 +148,13 @@ module Ephemeral =
 
   let private handleDismissal (push: DismissalSchema.Root) =
     // TODO
+    Logger.trace <| sprintf "Pushbullet: Dismissal %s" push.PackageName
     ()
 
   let private handleSmsChanged (push: SmsChangedSchema.Root) =
     push.Notifications
     |> Array.iter (fun pushNotif ->
-      Logger.trace <| sprintf "Notification: Timestamp %s" ((unixTimeStampToDateTime pushNotif.Timestamp).ToString())
+      Logger.trace <| sprintf "Pushbullet: Timestamp %s" ((unixTimeStampToDateTime pushNotif.Timestamp).ToString())
       Notification.send
         { Summary = Text(sprintf "%s" <| pushNotif.Title.Trim())
           Body = Text(pushNotif.Body.Trim())
@@ -186,10 +186,9 @@ module Stream =
       match p.JsonValue.TryGetProperty("encrypted") with
       | Some e when e.AsBoolean() -> Crypto.decrypt encryptPass p.Ciphertext |> Option.iter Ephemeral.handle
       | _ -> Ephemeral.handle <| p.JsonValue.ToString()
-    | None -> Logger.error "Ephemeral message received with no contents"
+    | None -> Logger.debug "Ephemeral message received with no contents"
 
   let private handleNop (heartbeat: Timer) =
-    Logger.trace "Pushbullet: Resetting heartbeat timer"
     heartbeat.Stop()
     heartbeat.Start()
 
@@ -205,7 +204,6 @@ module Stream =
       Logger.debug <| sprintf "Failed to handle message (%s)" ex.Message
 
   let private handleHeartbeatMissed (websocket: WebSocket) reconnect =
-    Logger.trace "Pushbullet: Heartbeat missed"
     reconnect()
 
   let rec connect() =

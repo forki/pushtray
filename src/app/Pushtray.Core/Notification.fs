@@ -41,7 +41,7 @@ let private lineWrapWidth = int <| Cli.argWithDefault "--notify-line-wrap" "40"
 let private linePadWidth = int <| Cli.argWithDefault "--notify-line-pad" "45"
 let private leftPad = "  "
 
-let private wrap width line =
+let private wrapLine width line =
   let rec loop remaining result words =
     match words with
     | head :: tail ->
@@ -53,18 +53,18 @@ let private wrap width line =
   String.split [|' '|] line
   |> (List.ofArray >> loop width "")
 
-let private pad width line =
+let private padLine width line =
   (if String.length line < width then
     line + (String.replicate (width - line.Length) " ")
   else
     line)
   |> sprintf "%s%s" leftPad
 
-let private prettify str =
-  str
+let private prettify text =
+  text
   |> String.split [|'\n'|]
-  |> Array.collect (wrap lineWrapWidth >> String.split [|'\n'|])
-  |> Array.map (pad linePadWidth)
+  |> Array.collect (wrapLine lineWrapWidth >> String.split [|'\n'|])
+  |> Array.map (padLine linePadWidth)
   |> String.concat "\n"
 
 let private dismiss asyncRequest (notification: Notification) (args: ActionArgs) =
@@ -105,7 +105,7 @@ let send data =
       Logger.trace <| sprintf "Notification: Adding action '%s'" a.Label
       notification.AddAction(a.Label, a.Label, fun _ args -> a.Handler args))
 
-    Logger.info <|
+    Logger.trace <|
       sprintf "Notification: Summary = '%s' Body = '%s'"
         (notification.Summary.Trim())
         (notification.Body.Trim())

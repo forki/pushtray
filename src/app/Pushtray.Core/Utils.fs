@@ -32,29 +32,32 @@ module Async =
         None)
 
 module Http =
+  let tokenHeader accessToken =
+    "Access-Token", accessToken
+
   let get accessToken url =
-    Logger.trace <| sprintf "Request GET: %s" url
+    Logger.trace <| sprintf "Request(GET): %s" url
     try
       Http.RequestString
         ( url,
-          headers = [ Accept HttpContentTypes.Json; "Access-Token", accessToken ] )
+          headers = [ Accept HttpContentTypes.Json; tokenHeader accessToken ] )
       |> Some
     with ex ->
-      Logger.error <| sprintf "Request GET: %s (%s)" ex.Message url
+      Logger.error <| sprintf "Request(GET): %s (%s)" ex.Message url
       None
 
   let getAsync accessToken url =
-    Logger.trace <| sprintf "RequestAsync GET: %s" url
+    Logger.trace <| sprintf "RequestAsync(GET): %s" url
     Http.AsyncRequestString
       ( url,
-        headers = [ Accept HttpContentTypes.Json; "Access-Token", accessToken ])
+        headers = [ Accept HttpContentTypes.Json; tokenHeader accessToken ] )
     |> Async.Catch
 
   let post accessToken url body =
-    Logger.trace <| sprintf "RequestAsync POST: %s (Body = %s)" url body
+    Logger.trace <| sprintf "RequestAsync(POST): %s (Body = %s)" url body
     Http.AsyncRequestString
       ( url,
-        headers = [ ContentType HttpContentTypes.Json; "Access-Token", accessToken ],
+        headers = [ ContentType HttpContentTypes.Json; tokenHeader accessToken ],
         body = TextRequest body )
     |> Async.Catch
 

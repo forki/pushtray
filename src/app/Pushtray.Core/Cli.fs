@@ -4,7 +4,7 @@ open System
 
 let usage = "\
 usage:
-  pushtray <access-token> <encrypt-pass> [options]
+  pushtray <access-token> [<encrypt-pass>] [options]
 
 options:
   --notify-format=<fmt>       Set notification format style (full, short)

@@ -35,7 +35,7 @@ let private format =
   match Cli.argWithDefault "--notify-format" "short" with
   | "full" -> Full
   | "short" -> Short
-  | str -> Logger.warn <| sprintf "Invalid notification format '%s'" str; Short
+  | str -> Logger.warn <| sprintf "Unknown --notify-format value '%s'" str; Short
 
 let private lineWrapWidth = int <| Cli.argWithDefault "--notify-line-wrap" "40"
 let private linePadWidth = int <| Cli.argWithDefault "--notify-line-pad" "45"

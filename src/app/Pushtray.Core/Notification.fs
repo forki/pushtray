@@ -32,7 +32,7 @@ type Format =
   | Short
 
 let private format =
-  match Cli.argWithDefault "--notify-format" "--short" with
+  match Cli.argWithDefault "--notify-format" "short" with
   | "full" -> Full
   | "short" -> Short
   | str -> Logger.warn <| sprintf "Invalid notification format '%s'" str; Short

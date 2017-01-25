@@ -8,8 +8,8 @@ type IconStyle =
   | Light
   | Dark
 
-let private iconStyle =
-  match Cli.argWithDefault "--icon-style" "light" with
+let private iconStyleFromString style =
+  match style with
   | "light" -> Light
   | "dark" -> Dark
   | str -> Logger.warn <| sprintf "Unknown --icon-style value '%s'" str; Light
@@ -25,9 +25,9 @@ let private onTrayIconPopup args =
   popupMenu.ShowAll()
   popupMenu.Popup()
 
-let create() =
+let create iconStyle =
   let iconPath =
-    match iconStyle with
+    match iconStyleFromString iconStyle with
     | Light -> "pushbullet-tray-light.svg"
     | Dark -> "pushbullet-tray-dark.svg"
     |> sprintf "icons/%s"

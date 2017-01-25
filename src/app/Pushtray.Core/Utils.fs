@@ -62,6 +62,10 @@ module Http =
         body = TextRequest body )
     |> Async.Catch
 
+let tryParseJson parse result =
+  try Some <| parse(result)
+  with ex -> Logger.error ex.Message; None
+
 let appDataDirs =
   try
     let dataDirs =

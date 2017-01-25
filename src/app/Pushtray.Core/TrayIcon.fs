@@ -12,7 +12,7 @@ let private iconStyle =
   match Cli.argWithDefault "--icon-style" "light" with
   | "light" -> Light
   | "dark" -> Dark
-  | str -> Logger.warn <| sprintf "Unknown icon style '%s'" str; Light
+  | str -> Logger.warn <| sprintf "Unknown --icon-style value '%s'" str; Light
 
 let private onTrayIconPopup args =
   let menuItemQuit = new ImageMenuItem("Quit")

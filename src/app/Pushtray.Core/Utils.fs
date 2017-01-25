@@ -3,6 +3,7 @@ module Pushtray.Utils
 open System
 open System.IO
 open System.Diagnostics
+open System.Timers
 open FSharp.Data
 open FSharp.Data.HttpRequestHeaders
 
@@ -74,3 +75,9 @@ let appDataDirs =
 
 let unixTimeStampToDateTime (timestamp: decimal) =
   System.DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(float timestamp)
+
+let createTimer interval func =
+  let timer = new Timer(interval)
+  timer.Elapsed.Add(func)
+  timer.AutoReset <- false
+  timer

@@ -14,7 +14,7 @@ module Endpoints =
   let ephemerals = "https://api.pushbullet.com/v2/ephemerals"
 
 let private accessToken = Cli.requiredArg "<access-token>"
-let private encryptPass = Cli.requiredArg "<encrypt-pass>"
+let private encryptPass = Cli.arg "<encrypt-pass>"
 
 let user =
   Http.get accessToken Endpoints.user
@@ -184,7 +184,7 @@ module Stream =
     match push with
     | Some p ->
       match p.JsonValue.TryGetProperty("encrypted") with
-      | Some e when e.AsBoolean() -> Crypto.decrypt encryptPass p.Ciphertext |> Option.iter Ephemeral.handle
+      | Some e when e.AsBoolean() -> Crypto.decrypt (defaultArg encryptPass "") p.Ciphertext |> Option.iter Ephemeral.handle
       | _ -> Ephemeral.handle <| p.JsonValue.ToString()
     | None -> Logger.debug "Ephemeral message received with no contents"
 
@@ -210,8 +210,9 @@ module Stream =
     Logger.trace "Pushbullet: Printing devices"
     devices |> Array.iter (fun d -> Logger.info <| sprintf "Device [%s %s] %s" d.Manufacturer d.Model d.Nickname)
 
-    Logger.info <| sprintf "Connecting to stream %s" (Endpoints.stream accessToken)
-    let websocket = new WebSocket(Endpoints.stream accessToken)
+    let streamUrl = Endpoints.stream accessToken
+    Logger.info <| sprintf "Connecting to stream %s" streamUrl
+    let websocket = new WebSocket(streamUrl)
 
     let reconnect = fun _ ->
       Logger.trace "Pushbullet: Closing stream connection"
@@ -220,9 +221,9 @@ module Stream =
       connect()
 
     // After 95 seconds of no activity (3 missed nops) we'll assume we need to restart
-    let heartbeatTimer = new Timer(95000.0)
-    heartbeatTimer.Elapsed.Add(fun _ -> handleHeartbeatMissed websocket reconnect)
-    heartbeatTimer.AutoReset <- false
+    let heartbeatTimer =
+      fun _ -> handleHeartbeatMissed websocket reconnect
+      |> createTimer 95000.0
 
     websocket.OnMessage.Add(fun e -> handleMessage heartbeatTimer e.Data)
     websocket.OnError.Add(fun e -> Logger.error e.Message)
@@ -233,7 +234,6 @@ module Stream =
       | CloseStatusCode.Normal | CloseStatusCode.Away -> ()
       | _ ->
         Logger.trace "Pushbullet: Attempting to reconnect in 5 seconds"
-        Thread.Sleep(5000)
-        reconnect())
+        (createTimer 5000.0 (fun _ -> reconnect())).Start())
 
     websocket.ConnectAsync()

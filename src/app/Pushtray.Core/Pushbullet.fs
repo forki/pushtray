@@ -14,7 +14,8 @@ module Endpoints =
   let ephemerals = "https://api.pushbullet.com/v2/ephemerals"
 
 let private accessToken = Cli.requiredArg "<access-token>"
-let private encryptPass = Cli.arg "<encrypt-pass>"
+let private encryptPass = Cli.argAsString "<encrypt-pass>"
+let private ignoredSmsNumbers = Cli.argAsSet "--ignore-sms"
 
 let user =
   Http.get accessToken Endpoints.user
@@ -152,17 +153,19 @@ module Ephemeral =
     ()
 
   let private handleSmsChanged (push: SmsChangedSchema.Root) =
-    push.Notifications
-    |> Array.iter (fun pushNotif ->
-      Logger.trace <| sprintf "Pushbullet: Timestamp %s" ((unixTimeStampToDateTime pushNotif.Timestamp).ToString())
-      Notification.send
-        { Summary = Text(sprintf "%s" <| pushNotif.Title.Trim())
-          Body = Text(pushNotif.Body.Trim())
-          DeviceInfo = deviceInfo push.SourceDeviceIden
-          Timestamp = Some <| (unixTimeStampToDateTime pushNotif.Timestamp).ToString("hh:mm tt")
-          Icon = Notification.Stock("smartphone-symbolic")
-          Actions = [||]
-          Dismissible = None })
+    if not <| ignoredSmsNumbers.Contains("*") then
+      push.Notifications
+      |> Array.filter (fun notif -> not <| ignoredSmsNumbers.Contains(notif.Title.Trim()))
+      |> Array.iter (fun notif ->
+        Logger.trace <| sprintf "Pushbullet: Timestamp %s" ((unixTimeStampToDateTime notif.Timestamp).ToString())
+        Notification.send
+          { Summary = Text(sprintf "%s" <| notif.Title.Trim())
+            Body = Text(notif.Body.Trim())
+            DeviceInfo = deviceInfo push.SourceDeviceIden
+            Timestamp = Some <| (unixTimeStampToDateTime notif.Timestamp).ToString("hh:mm tt")
+            Icon = Notification.Stock("smartphone-symbolic")
+            Actions = [||]
+            Dismissible = None })
 
   let handle json =
     Logger.trace <| sprintf "Json: %s" json

@@ -17,7 +17,7 @@ let main argv =
   Pushbullet.Stream.connect()
 
   Application.Init()
-  TrayIcon.create()
+  TrayIcon.create <| Cli.argWithDefault "--icon-style" "light"
 
   // Ctrl-c doesn't seem to do anything after Application.Run() is called
   // so we'll handle SIGINT explicitly

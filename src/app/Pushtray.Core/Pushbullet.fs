@@ -4,8 +4,8 @@ open FSharp.Data
 open FSharp.Data.JsonExtensions
 open Pushtray.Utils
 
-type UserSchema = JsonProvider<"""../../../schemas/user.json""">
-type DevicesSchema = JsonProvider<"""../../../schemas/devices.json""">
+type User = JsonProvider<"""../../../schemas/user.json""">
+type Devices = JsonProvider<"""../../../schemas/devices.json""">
 
 module Endpoints =
   let stream accessToken = sprintf "wss://stream.pushbullet.com/websocket/%s" accessToken
@@ -19,9 +19,7 @@ let private ignoredSmsNumbers = Cli.argAsSet "--ignore-sms"
 
 let user =
   Http.get accessToken Endpoints.user
-  |> Option.bind (fun result ->
-    try Some <| UserSchema.Parse(result)
-    with ex -> Logger.error ex.Message; None)
+  |> Option.bind (tryParseJson User.Parse)
   |> function
   | Some user -> user
   | None ->
@@ -30,11 +28,9 @@ let user =
 
 let devices =
   Http.get accessToken Endpoints.devices
-  |> Option.bind (fun result ->
-    try Some <| DevicesSchema.Parse(result).Devices
-    with ex -> Logger.error ex.Message; None)
+  |> Option.bind (tryParseJson Devices.Parse)
   |> function
-  | Some devices -> devices
+  | Some d -> d.Devices
   | None ->
     Logger.fatal "Could not retrieve user devices"
     exit 1
@@ -46,9 +42,6 @@ let private devicesMap =
 
 let device iden =
   devicesMap.TryFind iden
-  |> Option.orElse (fun _ ->
-    Logger.error (sprintf "Unable to find device with iden '%s'" iden)
-    None)
 
 module Crypto =
   open System
@@ -83,35 +76,16 @@ module Crypto =
 module Ephemeral =
   open Notification
 
-  type MirrorSchema = JsonProvider<"""../../../schemas/mirror.json""", SampleIsList=true>
-  type DismissalSchema = JsonProvider<"""../../../schemas/dismissal.json""", SampleIsList=true>
-  type SmsChangedSchema = JsonProvider<"""../../../schemas/sms-changed.json""", InferTypesFromValues=false>
-
-  type EphemeralType =
-    | Mirror
-    | Dismissal
-    | SmsChanged
-    | Unknown
-
-  let private typeFromJsonString json =
-    try
-      match JsonValue.Parse(json)?``type``.AsString() with
-      | "mirror" -> Mirror
-      | "dismissal" -> Dismissal
-      | "sms_changed" -> SmsChanged
-      | str ->
-        Logger.debug <| sprintf "Unknown push type=%s %s" str json
-        Unknown
-    with ex ->
-      Logger.error <| sprintf "Failed to detect push type (%s)" ex.Message
-      Unknown
+  type Mirror = JsonProvider<"""../../../schemas/mirror.json""", SampleIsList=true>
+  type Dismissal = JsonProvider<"""../../../schemas/dismissal.json""", SampleIsList=true>
+  type SmsChanged = JsonProvider<"""../../../schemas/sms-changed.json""", InferTypesFromValues=false>
 
   let private deviceInfo deviceIden =
     device deviceIden |> Option.map (fun d -> d.Nickname.Trim())
 
   let dismiss notificationId notificationTag packageName sourceUserIden =
     let ephemeral =
-      DismissalSchema.Root
+      Dismissal.Root
         ( ``type`` = "dismissal",
           sourceDeviceIden = "",
           sourceUserIden = sourceUserIden,
@@ -127,7 +101,7 @@ module Ephemeral =
     // TODO
     ()
 
-  let private handleMirror (push: MirrorSchema.Root) =
+  let private handleMirror (push: Mirror.Root) =
     Notification.send
       { Summary = Text(sprintf "%s: %s" (push.ApplicationName.Trim()) (push.Title.Trim()))
         Body = Text(push.Body.Trim())
@@ -147,12 +121,12 @@ module Ephemeral =
                 push.SourceUserIden
           else None }
 
-  let private handleDismissal (push: DismissalSchema.Root) =
+  let private handleDismissal (push: Dismissal.Root) =
     // TODO
     Logger.trace <| sprintf "Pushbullet: Dismissal %s" push.PackageName
     ()
 
-  let private handleSmsChanged (push: SmsChangedSchema.Root) =
+  let private handleSmsChanged (push: SmsChanged.Root) =
     if not <| ignoredSmsNumbers.Contains("*") then
       push.Notifications
       |> Array.filter (fun notif -> not <| ignoredSmsNumbers.Contains(notif.Title.Trim()))
@@ -169,11 +143,15 @@ module Ephemeral =
 
   let handle json =
     Logger.trace <| sprintf "Json: %s" json
-    match typeFromJsonString <| json with
-    | Mirror -> handleMirror <| MirrorSchema.Parse(json)
-    | Dismissal -> handleDismissal <| DismissalSchema.Parse(json)
-    | SmsChanged -> handleSmsChanged <| SmsChangedSchema.Parse(json)
-    | Unknown -> ()
+    try
+      match JsonValue.Parse(json)?``type``.AsString() with
+        | "mirror" -> handleMirror <| Mirror.Parse(json)
+        | "dismissal" -> handleDismissal <| Dismissal.Parse(json)
+        | "sms_changed" -> handleSmsChanged <| SmsChanged.Parse(json)
+        | t ->
+          Logger.debug <| sprintf "Unknown push type=%s" t
+    with ex ->
+      Logger.error <| sprintf "Failed to detect push type (%s)" ex.Message
 
 module Stream =
   open System.Threading
@@ -181,9 +159,9 @@ module Stream =
   open FSharp.Data.JsonExtensions
   open WebSocketSharp
 
-  type StreamSchema = JsonProvider<"""../../../schemas/stream.json""", SampleIsList=true>
+  type Stream = JsonProvider<"""../../../schemas/stream.json""", SampleIsList=true>
 
-  let private handleEphemeral (push: StreamSchema.Push option) =
+  let private handleEphemeral (push: Stream.Push option) =
     match push with
     | Some p ->
       match p.JsonValue.TryGetProperty("encrypted") with
@@ -198,16 +176,13 @@ module Stream =
   let private handleMessage heartbeat json =
     try
       Logger.trace <| sprintf "Pushbullet: Message[Raw] %s" json
-      let message = StreamSchema.Parse(json)
+      let message = Stream.Parse(json)
       match message.Type with
       | "push" -> handleEphemeral message.Push
       | "nop" -> handleNop heartbeat
       | t -> Logger.debug <| sprintf "Pushbullet: Message[Unknown] type=%s" t
     with ex ->
       Logger.debug <| sprintf "Failed to handle message (%s)" ex.Message
-
-  let private handleHeartbeatMissed (websocket: WebSocket) reconnect =
-    reconnect()
 
   let rec connect() =
     Logger.trace "Pushbullet: Printing devices"
@@ -223,9 +198,9 @@ module Stream =
       Logger.trace "Pushbullet: Reconnecting"
       connect()
 
-    // After 95 seconds of no activity (3 missed nops) we'll assume we need to restart
+    // After 95 seconds of no activity (3 missed nops) we'll assume we need to reconnect
     let heartbeatTimer =
-      fun _ -> handleHeartbeatMissed websocket reconnect
+      fun _ -> reconnect()
       |> createTimer 95000.0
 
     websocket.OnMessage.Add(fun e -> handleMessage heartbeatTimer e.Data)

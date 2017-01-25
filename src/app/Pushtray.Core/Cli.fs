@@ -12,7 +12,7 @@ options:
   --notify-format=<fmt>       Set notification format style (full, short)
   --notify-line-wrap=<wrap>   Set the line wrap width of notifications
                               (i.e. the maximum width)
-  --notify-line-pad=<pad>     Set the minimum line width of notifications
+  --notify-line-pad=<pad-to>  Set the minimum line width of notifications
   --icon-style=<style>        Customize the tray icon style (light, dark)
   --log=<log-level>           Enable all logging messages at <log-level> and higher"
 

@@ -9,8 +9,6 @@ let binary = sprintf "%s.exe" <| projectName.ToLower()
 let version = "0.1.0";
 let config = getBuildParamOrDefault "config" "Release"
 let platformTarget = getBuildParamOrDefault "platformTarget" "AnyCPU"
-let outputDir = "output"
-let outputDirWithConfig = outputDir </> config
 
 Target "Build" (fun _ ->
   let setParams defaults =
@@ -28,15 +26,19 @@ let execMono cmd =
     info.FileName <- "mono"
     info.Arguments <- cmd)
 
+let outputDir = "output"
+let outputDirWithConfig = outputDir </> config
+let outputMergeDir = outputDirWithConfig </> "merge"
+let outputMergeBinary = outputMergeDir </> binary
+
 Target "Repack" (fun _ ->
   let toolPath = "packages" </> "ILRepack" </> "tools" </> "ILRepack.exe"
   let inputBinary = outputDirWithConfig </> binary
-  let outputMergeDir = outputDirWithConfig </> "merge"
-  let outputBinary = outputMergeDir </> binary
 
   let libs =
     [ "FSharp.Core"
       "FSharp.Data"
+      "notify-sharp"
       "websocket-sharp"
       "BouncyCastle.Crypto"
       "DocoptNet" ]
@@ -46,17 +48,26 @@ Target "Repack" (fun _ ->
   mkdir outputMergeDir
   sprintf "%s /xmldocs /out:%s %s %s"
     toolPath
-    outputBinary
+    outputMergeBinary
     inputBinary
     libs
   |> execMono
   |> ignore)
 
-Target "Clean" (fun _ ->
-  CleanDir outputDir)
+let releaseDir = "dist"
+let dataDir = "data"
 
-// TODO
-Target "Release" ignore
+Target "Release" (fun _ ->
+  mkdir releaseDir
+  cp outputMergeBinary releaseDir
+
+  let releaseIconsDir = releaseDir </> "icons"
+  mkdir releaseIconsDir
+  cp_r (dataDir </> "icons") releaseIconsDir)
+
+Target "Clean" (fun _ ->
+  CleanDir outputDir
+  CleanDir releaseDir)
 
 "Clean"
   ==> "Build"

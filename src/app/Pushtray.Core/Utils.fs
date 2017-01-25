@@ -61,12 +61,13 @@ module Http =
         body = TextRequest body )
     |> Async.Catch
 
-let appDataDir =
+let appDataDirs =
   try
-    Path.Combine
-      [| Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)
-         "pushtray" |]
-    |> Some
+    let dataDirs =
+      [ Environment.SpecialFolder.ApplicationData
+        Environment.SpecialFolder.CommonApplicationData ]
+      |> List.map (fun p -> Path.Combine(Environment.GetFolderPath(p), "pushtray"))
+    Some <| (AppDomain.CurrentDomain.BaseDirectory :: dataDirs)
   with ex ->
     Logger.debug <| sprintf "DataDir: %s" ex.Message
     None

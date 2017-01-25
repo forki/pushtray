@@ -5,6 +5,7 @@ nuget FAKE
 nuget ILRepack
 nuget FSharp.Core     content:once
 nuget FSharp.Data     content:once
+nuget GtkSharp
 nuget WebSocketSharp  content:once
 nuget BouncyCastle
 nuget Docopt.Net      content:none

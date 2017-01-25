@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -42,9 +42,9 @@
   </PropertyGroup>
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <Choose>
-    <When Condition="">
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6.1'">
       <PropertyGroup>
-        <__paket__gtk-sharp3_targets>gtk-sharp3</__paket__gtk-sharp3_targets>
+        <__paket__GtkSharp_targets>net45\GtkSharp</__paket__GtkSharp_targets>
       </PropertyGroup>
     </When>
   </Choose>
@@ -65,38 +65,6 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="gtk-sharp">
-      <HintPath>/usr/lib/mono/gtk-sharp-3.0/gtk-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="gdk-sharp">
-      <HintPath>/usr/lib/mono/gtk-sharp-3.0/gdk-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="glib-sharp">
-      <HintPath>/usr/lib/mono/gtk-sharp-3.0/glib-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="gio-sharp">
-      <HintPath>/usr/lib/mono/gtk-sharp-3.0/gio-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="gtk-dotnet">
-      <HintPath>/usr/lib/mono/gtk-sharp-3.0/gtk-dotnet.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="atk-sharp">
-      <HintPath>/usr/lib/mono/gtk-sharp-3.0/atk-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="cario-sharp">
-      <HintPath>/usr/lib/mono/gtk-sharp-3.0/cairo-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="pango-sharp">
-      <HintPath>/usr/lib/mono/gtk-sharp-3.0/pango-sharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="notify-sharp">
       <HintPath>/usr/lib/mono/notify-sharp-3.0/notify-sharp.dll</HintPath>
       <Private>True</Private>
@@ -152,6 +120,47 @@
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6.1'">
       <ItemGroup>
+        <Reference Include="atk-sharp">
+          <HintPath>..\..\..\packages\GtkSharp\lib\net45\atk-sharp.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+        <Reference Include="cairo-sharp">
+          <HintPath>..\..\..\packages\GtkSharp\lib\net45\cairo-sharp.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+        <Reference Include="gdk-sharp">
+          <HintPath>..\..\..\packages\GtkSharp\lib\net45\gdk-sharp.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+        <Reference Include="gio-sharp">
+          <HintPath>..\..\..\packages\GtkSharp\lib\net45\gio-sharp.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+        <Reference Include="glib-sharp">
+          <HintPath>..\..\..\packages\GtkSharp\lib\net45\glib-sharp.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+        <Reference Include="gtk-sharp">
+          <HintPath>..\..\..\packages\GtkSharp\lib\net45\gtk-sharp.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+        <Reference Include="pango-sharp">
+          <HintPath>..\..\..\packages\GtkSharp\lib\net45\pango-sharp.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6.1'">
+      <ItemGroup>
         <Reference Include="websocket-sharp">
           <HintPath>..\..\..\packages\WebSocketSharp\lib\websocket-sharp.dll</HintPath>
           <Private>True</Private>
@@ -160,5 +169,5 @@
       </ItemGroup>
     </When>
   </Choose>
-  <Import Project="..\..\..\packages\gtk-sharp3\build\$(__paket__gtk-sharp3_targets).targets" Condition="Exists('..\..\..\packages\gtk-sharp3\build\$(__paket__gtk-sharp3_targets).targets')" Label="Paket" />
+  <Import Project="..\..\..\packages\GtkSharp\build\$(__paket__GtkSharp_targets).targets" Condition="Exists('..\..\..\packages\GtkSharp\build\$(__paket__GtkSharp_targets).targets')" Label="Paket" />
 </Project>

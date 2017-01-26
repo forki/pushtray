@@ -35,13 +35,10 @@ let devices =
     Logger.fatal "Could not retrieve user devices"
     exit 1
 
-let private devicesMap =
+let private deviceMap =
   devices
   |> Array.map (fun d -> (d.Iden, d))
   |> Map.ofArray
-
-let device iden =
-  devicesMap.TryFind iden
 
 module Crypto =
   open System
@@ -81,7 +78,7 @@ module Ephemeral =
   type SmsChanged = JsonProvider<"""../../../schemas/sms-changed.json""", InferTypesFromValues=false>
 
   let private deviceInfo deviceIden =
-    device deviceIden |> Option.map (fun d -> d.Nickname.Trim())
+    deviceMap.TryFind deviceIden |> Option.map (fun d -> d.Nickname.Trim())
 
   let dismiss notificationId notificationTag packageName sourceUserIden =
     let ephemeral =

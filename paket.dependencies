@@ -3,9 +3,9 @@ source https://www.nuget.org/api/v2
 
 nuget FAKE
 nuget ILRepack
-nuget FSharp.Core     content:once
-nuget FSharp.Data     content:once
+nuget FSharp.Core content:once
+nuget FSharp.Data content:once
 nuget GtkSharp
-nuget WebSocketSharp  content:once
+nuget WebSocketSharp >= 1.0.3-rc11 content:once
 nuget BouncyCastle
-nuget Docopt.Net      content:none
+nuget Docopt.Net content:none

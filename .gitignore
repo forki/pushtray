@@ -1,5 +1,6 @@
 .fake
-.paket
+.paket/*
+!.paket/paket.bootstrapper.exe
 packages
 output
 dist

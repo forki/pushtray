@@ -1,6 +1,7 @@
 module Pushtray.Notification
 
 open System
+open Gtk
 open Gdk
 open Notifications
 open Pushtray.Utils

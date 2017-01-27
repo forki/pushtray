@@ -110,7 +110,7 @@ module Ephemeral =
             Handler = fun _ -> handleAction a.TriggerKey })
         Dismissible =
           if push.Dismissible then
-            Some <| fun _ ->
+            Some <| fun () ->
               dismiss
                 push.NotificationId
                 push.NotificationTag.JsonValue
@@ -155,6 +155,7 @@ module Stream =
   open System.Timers
   open FSharp.Data.JsonExtensions
   open WebSocketSharp
+  open Notification
 
   type Stream = JsonProvider<"""../../../schemas/stream.json""", SampleIsList=true>
 
@@ -162,7 +163,18 @@ module Stream =
     match push with
     | Some p ->
       match p.JsonValue.TryGetProperty("encrypted") with
-      | Some e when e.AsBoolean() -> Crypto.decrypt (defaultArg encryptPass "") p.Ciphertext |> Option.iter Ephemeral.handle
+      | Some e when e.AsBoolean() ->
+        match Crypto.decrypt (defaultArg encryptPass "") p.Ciphertext with
+        | Some e -> Ephemeral.handle e
+        | None ->
+          Notification.send
+            { Summary = Text("Pushtray: Decryption failure")
+              Body = Text("Your password might be incorrect.")
+              DeviceInfo = None
+              Timestamp = None
+              Icon =  Notification.Stock(Gtk.Stock.Info)
+              Actions = [||]
+              Dismissible = None }
       | _ -> Ephemeral.handle <| p.JsonValue.ToString()
     | None -> Logger.debug "Ephemeral message received with no contents"
 
@@ -189,9 +201,9 @@ module Stream =
     Logger.info <| sprintf "Connecting to stream %s" streamUrl
     let websocket = new WebSocket(streamUrl)
 
-    let reconnect = fun _ ->
+    let reconnect = fun () ->
       Logger.trace "Pushbullet: Closing stream connection"
-      lock websocket (fun _ -> try websocket.Close(CloseStatusCode.Normal) with ex -> Logger.debug ex.Message)
+      lock websocket (fun () -> try websocket.Close(CloseStatusCode.Normal) with ex -> Logger.debug ex.Message)
       Logger.trace "Pushbullet: Reconnecting"
       connect()
 

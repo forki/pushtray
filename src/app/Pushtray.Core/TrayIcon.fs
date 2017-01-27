@@ -12,7 +12,9 @@ let private iconStyleFromString style =
   match style with
   | "light" -> Light
   | "dark" -> Dark
-  | str -> Logger.warn <| sprintf "Unknown --icon-style value '%s'" str; Light
+  | str ->
+    Logger.warn <| sprintf "Unknown --icon-style value '%s'" str
+    Light
 
 let private onTrayIconPopup args =
   let menuItemQuit = new ImageMenuItem("Quit")

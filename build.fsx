@@ -10,7 +10,7 @@ let version = "0.1.0";
 let config = getBuildParamOrDefault "config" "Release"
 let platformTarget = getBuildParamOrDefault "platformTarget" "AnyCPU"
 
-Target "Build" (fun _ ->
+Target "Build" (fun () ->
   let setParams defaults =
     { defaults with
         Targets = ["Build"]
@@ -31,7 +31,7 @@ let buildDirWithConfig = buildDir </> "output" </> config
 let buildMergeDir = buildDirWithConfig </> "merge"
 let buildMergeBinary = buildMergeDir </> binary
 
-Target "Repack" (fun _ ->
+Target "Repack" (fun () ->
   let toolPath = "packages" </> "ILRepack" </> "tools" </> "ILRepack.exe"
   let inputBinary = buildDirWithConfig </> binary
 
@@ -56,11 +56,11 @@ Target "Repack" (fun _ ->
 
 let distDir = buildDir </> "dist"
 
-Target "Release" (fun _ ->
+Target "Release" (fun () ->
   mkdir distDir
   cp buildMergeBinary distDir)
 
-Target "Clean" (fun _ ->
+Target "Clean" (fun () ->
   CleanDir buildDir)
 
 "Clean"

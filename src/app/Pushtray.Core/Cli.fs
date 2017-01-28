@@ -8,7 +8,8 @@ usage:
 
 options:
   --ignore-sms <numbers>      Don't show SMS notifications from these numbers
-                              <numbers> is a comma-separated list or a single asterisk to ignore all.
+                              <numbers> is a comma-separated list or a single asterisk
+                              to ignore all.
   --notify-format=<fmt>       Set notification format style (full | short)
   --notify-line-wrap=<wrap>   Set the line wrap width of notifications (i.e. the maximum width)
   --notify-line-pad=<pad-to>  Set the minimum line width of notifications

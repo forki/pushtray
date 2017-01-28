@@ -33,7 +33,7 @@ module Async =
         None)
 
 module Http =
-  let tokenHeader accessToken =
+  let private tokenHeader accessToken =
     "Access-Token", accessToken
 
   let get accessToken url =

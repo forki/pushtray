@@ -61,6 +61,7 @@
     <Compile Include="Utils.fs" />
     <Compile Include="TrayIcon.fs" />
     <Compile Include="Notification.fs" />
+    <Compile Include="Crypto.fs" />
     <Compile Include="Pushbullet.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

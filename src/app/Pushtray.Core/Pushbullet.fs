@@ -40,36 +40,6 @@ let private deviceMap =
   |> Array.map (fun d -> (d.Iden, d))
   |> Map.ofArray
 
-module Crypto =
-  open System
-  open Org.BouncyCastle
-  open Org.BouncyCastle.Crypto
-
-  let private iterations = 30000
-
-  let decrypt (password: string) (ciphertext: string) =
-    let gen = Generators.Pkcs5S2ParametersGenerator(Digests.Sha256Digest())
-    gen.Init
-      ( Text.Encoding.UTF8.GetBytes(password),   // Password
-        Text.Encoding.ASCII.GetBytes(user.Iden), // Salt
-        iterations )
-
-    let bytes = Convert.FromBase64String(ciphertext)
-    let version = bytes.[0]
-    let tag = bytes.[1..16]
-    let iv = bytes.[17..28]
-    let message = bytes.[29..]
-
-    try
-      let cipher = Security.CipherUtilities.GetCipher("AES/GCM/NoPadding")
-      cipher.Init(false, Parameters.ParametersWithIV(gen.GenerateDerivedParameters("AES", 256), iv))
-      cipher.DoFinal(Array.append message tag)
-      |> Text.Encoding.ASCII.GetString
-      |> Some
-    with ex ->
-      Logger.debug <| sprintf "Pushbullet: Decryption failure (%s)" ex.Message
-      None
-
 module Ephemeral =
   open Notification
 
@@ -164,17 +134,9 @@ module Stream =
     | Some p ->
       match p.JsonValue.TryGetProperty("encrypted") with
       | Some e when e.AsBoolean() ->
-        match Crypto.decrypt (defaultArg encryptPass "") p.Ciphertext with
-        | Some e -> Ephemeral.handle e
-        | None ->
-          Notification.send
-            { Summary = Text("Pushtray: Decryption failure")
-              Body = Text("Your password might be incorrect.")
-              DeviceInfo = None
-              Timestamp = None
-              Icon =  Notification.Stock(Gtk.Stock.Info)
-              Actions = [||]
-              Dismissible = None }
+        match Crypto.decrypt (defaultArg encryptPass "") user.Iden p.Ciphertext with
+        | Some eph -> Ephemeral.handle eph
+        | None -> Crypto.notifyDecryptionFailure()
       | _ -> Ephemeral.handle <| p.JsonValue.ToString()
     | None -> Logger.debug "Ephemeral message received with no contents"
 

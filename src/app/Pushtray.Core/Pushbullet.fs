@@ -2,10 +2,12 @@ module Pushtray.Pushbullet
 
 open FSharp.Data
 open FSharp.Data.JsonExtensions
+open Pushtray.Config
 open Pushtray.Utils
 
 type User = JsonProvider<"""../../../schemas/user.json""">
 type Devices = JsonProvider<"""../../../schemas/devices.json""">
+type Device =  Devices.Devicis
 
 module Endpoints =
   let stream accessToken = sprintf "wss://stream.pushbullet.com/websocket/%s" accessToken
@@ -13,7 +15,18 @@ module Endpoints =
   let devices = "https://api.pushbullet.com/v2/devices"
   let ephemerals = "https://api.pushbullet.com/v2/ephemerals"
 
-let private accessToken = Cli.requiredArg "<access-token>"
+let private accessToken =
+  let tokenOption =
+    match Cli.argAsString "--access-token" with
+    | None -> config |> Option.bind (fun c -> c.AccessToken)
+    | token -> token
+  match tokenOption with
+  | Some token -> token
+  | None ->
+    Logger.fatal "Access token not provided."
+    Logger.fatal <| sprintf "Did you create a config file at '%s'?" userConfigDir
+    exit 1
+
 let private encryptPass = Cli.argAsString "<encrypt-pass>"
 let private ignoredSmsNumbers = Cli.argAsSet "--ignore-sms"
 
@@ -46,9 +59,32 @@ module Ephemeral =
   type Mirror = JsonProvider<"""../../../schemas/mirror.json""", SampleIsList=true>
   type Dismissal = JsonProvider<"""../../../schemas/dismissal.json""", SampleIsList=true>
   type SmsChanged = JsonProvider<"""../../../schemas/sms-changed.json""", InferTypesFromValues=false>
+  type SendSms = JsonProvider<"""../../../schemas/send-sms.json""">
 
   let private deviceInfo deviceIden =
     deviceMap.TryFind deviceIden |> Option.map (fun d -> d.Nickname.Trim())
+
+  let private sendEphemeral push =
+    let encryptedJson password =
+      Crypto.encrypt password user.Iden push
+      |> Option.map (sprintf """{"ciphertext": "%s", "encrypted": true}""")
+    encryptPass
+    |> Option.fold (fun _ p -> encryptedJson p) (Some push)
+    |> Option.map
+      (sprintf """{"push": %s, "type": "push"}"""
+       >> Http.post accessToken Endpoints.ephemerals
+       >> Async.choice Some)
+
+  let sendSms sourceUserIden targetDeviceIden phoneNumber message =
+    let ephemeral =
+      SendSms.Root
+        ( ``type`` = "messaging_extension_reply",
+          packageName = "com.pushbullet.android",
+          sourceUserIden = sourceUserIden,
+          targetDeviceIden = targetDeviceIden,
+          conversationIden = phoneNumber,
+          message = message )
+    sendEphemeral <| ephemeral.JsonValue.ToString()
 
   let dismiss notificationId notificationTag packageName sourceUserIden =
     let ephemeral =
@@ -59,10 +95,7 @@ module Ephemeral =
           packageName = packageName,
           notificationId = notificationId,
           notificationTag = notificationTag )
-    ephemeral.JsonValue.ToString()
-    |> sprintf """{"push": %s, "type": "push"}"""
-    |> Http.post accessToken Endpoints.ephemerals
-    |> Async.choice Some
+    sendEphemeral <| ephemeral.JsonValue.ToString()
 
   let private handleAction triggerKey =
     // TODO
@@ -89,9 +122,7 @@ module Ephemeral =
           else None }
 
   let private handleDismissal (push: Dismissal.Root) =
-    // TODO
     Logger.trace <| sprintf "Pushbullet: Dismissal %s" push.PackageName
-    ()
 
   let private handleSmsChanged (push: SmsChanged.Root) =
     if not <| ignoredSmsNumbers.Contains("*") then
@@ -109,7 +140,7 @@ module Ephemeral =
             Dismissible = None })
 
   let handle json =
-    Logger.trace <| sprintf "Json: %s" json
+    Logger.trace <| sprintf "Pushbullet: Message[Json] %s" json
     try
       match JsonValue.Parse(json)?``type``.AsString() with
         | "mirror" -> handleMirror <| Mirror.Parse(json)
@@ -134,9 +165,8 @@ module Stream =
     | Some p ->
       match p.JsonValue.TryGetProperty("encrypted") with
       | Some e when e.AsBoolean() ->
-        match Crypto.decrypt (defaultArg encryptPass "") user.Iden p.Ciphertext with
-        | Some eph -> Ephemeral.handle eph
-        | None -> Crypto.notifyDecryptionFailure()
+        Crypto.decrypt (defaultArg encryptPass "") user.Iden p.Ciphertext
+        |> Option.iter Ephemeral.handle
       | _ -> Ephemeral.handle <| p.JsonValue.ToString()
     | None -> Logger.debug "Ephemeral message received with no contents"
 

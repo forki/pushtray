@@ -59,10 +59,12 @@
     <Compile Include="Cli.fs" />
     <Compile Include="Logger.fs" />
     <Compile Include="Utils.fs" />
+    <Compile Include="Config.fs" />
     <Compile Include="TrayIcon.fs" />
     <Compile Include="Notification.fs" />
     <Compile Include="Crypto.fs" />
     <Compile Include="Pushbullet.fs" />
+    <Compile Include="Sms.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

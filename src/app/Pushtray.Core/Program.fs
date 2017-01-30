@@ -24,7 +24,7 @@ let private connect() =
 
   Application.Run()
 
-let private sendSms() =
+let private sms() =
   Sms.send (requiredArg "<number>") (requiredArg "<message>")
 
 let private printHelp() =
@@ -33,6 +33,6 @@ let private printHelp() =
 [<EntryPoint>]
 let main argv =
   command "connect" connect
-  command "send-sms" sendSms
+  command "sms" sms
   commands [ "-h"; "--help" ] printHelp
   0

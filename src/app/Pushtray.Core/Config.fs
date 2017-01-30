@@ -29,4 +29,4 @@ let readConfigFile (filePath: string) =
   { AccessToken = values.TryFind "access_token" }
 
 let config =
- userConfigFile |> Option.map readConfigFile
+  userConfigFile |> Option.map readConfigFile

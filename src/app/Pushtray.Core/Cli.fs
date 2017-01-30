@@ -10,8 +10,8 @@ usage:
 
 let options = "\
 options:
-  --access-token=<token>      Set the access token. This will override the config
-                              file value.
+  --access-token=<token>      Set the access token. This will override the
+                              config file value.
   --ignore-sms <numbers>      Don't show SMS notifications from these numbers
                               <numbers> is a comma-separated list or a single
                               asterisk to ignore all.
@@ -20,7 +20,8 @@ options:
                               (i.e. the maximum width)
   --notify-line-pad=<pad-to>  Set the minimum line width of notifications
   --icon-style=<style>        Customize the tray icon style (light | dark)
-  --log=<log-level>           Enable all logging messages at <log-level> and higher"
+  --log=<log-level>           Enable all logging messages at <log-level>
+                              and higher"
 
 let usageWithOptions =
   sprintf "%s\n\n%s" usage options

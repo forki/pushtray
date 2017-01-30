@@ -12,8 +12,8 @@ let private getCipher() =
 let private generateKey (password: string) (salt: string) =
   let gen = Generators.Pkcs5S2ParametersGenerator(Digests.Sha256Digest())
   gen.Init
-    ( Text.Encoding.UTF8.GetBytes(password),   // Password
-      Text.Encoding.ASCII.GetBytes(salt), // Salt
+    ( Text.Encoding.UTF8.GetBytes(password),
+      Text.Encoding.ASCII.GetBytes(salt),
       30000 )
   gen.GenerateDerivedParameters("AES", 256)
 

@@ -4,19 +4,19 @@ open Pushtray.Pushbullet
 
 let private selectSmsDevice (devices: Pushbullet.Device[]) =
   let numDevices = Array.length devices
-  let rec readNumber showMessage =
-    if showMessage then printfn "Please enter a number [1 - %d]" (numDevices - 1)
+  let rec readNumber shouldShowMessage =
+    if shouldShowMessage then printf "Please enter a number [1 - %d]: " numDevices
     try
       match int <| System.Console.ReadLine().Trim() with
-      | n when n >= 1 && n < numDevices -> n
+      | n when n >= 1 && n <= numDevices -> n
       | _ -> readNumber true
     with ex ->
       Logger.debug ex.Message
       readNumber true
   if numDevices > 1 then
-    printfn "Choose device [1 - %d]: " (numDevices - 1)
     devices |> Array.iter (fun d -> printfn "1: %s %s" d.Manufacturer d.Nickname)
-    devices.[readNumber false]
+    printf "Choose device [1 - %d]: " numDevices
+    devices.[(readNumber false) - 1]
   else
     Array.head devices
 

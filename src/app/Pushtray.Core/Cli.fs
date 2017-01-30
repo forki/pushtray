@@ -5,7 +5,7 @@ open System
 let usage = "\
 usage:
   pushtray connect [<encrypt-pass>] [options]
-  pushtray send-sms <number> <message> [options]
+  pushtray sms <number> <message> [options]
   pushtray (-h | --help)"
 
 let options = "\

@@ -16,7 +16,9 @@ let private exitOnSignal (signum: Signum) =
 let private connect() =
   Pushbullet.Stream.connect()
   Application.Init()
-  TrayIcon.create <| Cli.argWithDefault "--icon-style" "light"
+
+  if not <| argExists "--no-tray-icon" then
+    TrayIcon.create <| Cli.argWithDefault "--icon-style" "light"
 
   // Ctrl-c doesn't seem to do anything after Application.Run() is called
   // so we'll handle SIGINT explicitly

@@ -2,14 +2,51 @@
   "devices": [
     {
       "active": true,
-      "app_version": 8623,
-      "created": 1.412047948579029e+09,
       "iden": "ujpah72o0sjAoRtnM0jc",
-      "manufacturer": "Apple",
-      "model": "iPhone 5s (GSM)",
-      "modified": 1.412047948579031e+09,
-      "nickname": "Elon Musk's iPhone",
-      "push_token": "production:f73be0ee7877c8c7fa69b1468cde764f"
+      "created": 1412047948.5790,
+      "modified": 1412047948.5790,
+      "type": "chrome",
+      "kind": "chrome",
+      "nickname": "Chrome",
+      "manufacturer": "Google",
+      "model": "Chrome",
+      "app_version": 188,
+      "pushable": true,
+      "icon": "browser"
+    },
+    {
+      "active": true,
+      "iden": "ujpah72o0sjAoRtnM0jc",
+      "created": 1412047948.5790,
+      "modified": 1412047948.5790,
+      "type": "android",
+      "kind": "android",
+      "nickname": "Mr. Explody",
+      "generated_nickname": true,
+      "manufacturer": "Samsung",
+      "model": "Galaxy Note 7",
+      "app_version": 256,
+      "push_token": "QWUShTnta3RbJa9UBt8ms-3MKs_",
+      "pushable": true,
+      "has_sms": true,
+      "has_mms": true,
+      "icon": "phone",
+      "remote_files": "disabled"
+    },
+    {
+      "active": true,
+      "iden": "ujDK3kNiwqysjAnBdJA0yG",
+      "created": 1412047948.5790,
+      "modified": 1412047948.5790,
+      "type": "windows",
+      "kind": "windows",
+      "nickname": "PC",
+      "manufacturer": "Microsoft",
+      "model": "Windows 10",
+      "app_version": 396,
+      "pushable": true,
+      "icon": "desktop",
+      "remote_files": "disabled"
     }
   ]
 }

@@ -12,7 +12,7 @@ type NotificationData =
     Timestamp: string option
     Icon: Icon
     Actions: Action[]
-    Dismissible: (unit -> Async<string option>) option }
+    Dismissible: (unit -> Async<string option> option) option }
 
 and NotificationText =
   | Text of string
@@ -69,8 +69,7 @@ let private prettify text =
 
 let private dismiss asyncRequest (notification: Notification) (args: ActionArgs) =
   asyncRequest()
-  |> Async.Ignore
-  |> Async.Start
+  |> Option.iter (Async.Ignore >> Async.Start)
   notification.Close()
 
 let send data =

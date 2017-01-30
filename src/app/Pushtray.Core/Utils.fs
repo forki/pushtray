@@ -10,8 +10,8 @@ open FSharp.Data.HttpRequestHeaders
 module Option =
   let orElse func (opt: 'a option) =
     match opt with
+    | Some v -> v
     | None -> func()
-    | v -> v
 
 module String =
   let split separators (str: string) =
@@ -76,6 +76,15 @@ let appDataDirs =
   with ex ->
     Logger.debug <| sprintf "DataDir: %s" ex.Message
     None
+
+let userConfigDir =
+  Path.Combine
+    [| Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)
+       "pushtray" |]
+
+let userConfigFile =
+  let filePath = Path.Combine(userConfigDir, "config")
+  if File.Exists(filePath) then Some filePath else None
 
 let unixTimeStampToDateTime (timestamp: decimal) =
   System.DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(float timestamp)

@@ -25,7 +25,15 @@ let private connect() =
   Application.Run()
 
 let private sms() =
-  Sms.send (requiredArg "<number>") (requiredArg "<message>")
+  Sms.send
+    (argAsString "--device")
+    (requiredArg "<number>")
+    (requiredArg "<message>")
+
+let private list() =
+  if argExists "devices" then
+    Pushbullet.devices |> Array.iter (fun d ->
+      printfn "%s (%s %s)" d.Nickname d.Manufacturer d.Model)
 
 let private printHelp() =
   printfn "%s" usageWithOptions
@@ -34,5 +42,6 @@ let private printHelp() =
 let main argv =
   command "connect" connect
   command "sms" sms
+  command "list" list
   commands [ "-h"; "--help" ] printHelp
   0

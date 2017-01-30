@@ -12,10 +12,7 @@ let private parseConfigLine line =
   let m = Regex.Match(line, "^\s*([\S]+)\s?=\s?([\S]+)$")
   if m.Success then
     match [for g in m.Groups -> g.Value] with
-    | _ :: captures ->
-      match captures with
-      | key :: (value :: _) -> Some (key, value)
-      | _ -> None
+    | _ :: key :: value :: _ ->  Some (key, value)
     | _ -> None
   else
     None

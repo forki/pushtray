@@ -6,6 +6,7 @@ open Pushtray.Utils
 
 type Config = {
   AccessToken: string option
+  EncryptPass: string option
 }
 
 let private parseConfigLine line =
@@ -23,7 +24,8 @@ let readConfigFile (filePath: string) =
     [while not reader.EndOfStream do yield reader.ReadLine()]
     |> List.choose parseConfigLine
     |> Map.ofList
-  { AccessToken = values.TryFind "access_token" }
+  { AccessToken = values.TryFind "access_token"
+    EncryptPass = values.TryFind "encrypt_pass" }
 
 let config =
   userConfigFile |> Option.map readConfigFile

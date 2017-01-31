@@ -16,18 +16,22 @@ module Endpoints =
   let ephemerals = "https://api.pushbullet.com/v2/ephemerals"
 
 let private accessToken =
-  let tokenOption =
+  let opt =
     match Cli.argAsString "--access-token" with
     | None -> config |> Option.bind (fun c -> c.AccessToken)
     | token -> token
-  match tokenOption with
+  match opt with
   | Some token -> token
   | None ->
     Logger.fatal "Access token not provided."
     Logger.fatal <| sprintf "Did you create a config file at '%s'?" userConfigDir
     exit 1
 
-let private encryptPass = Cli.argAsString "<encrypt-pass>"
+let private encryptPass =
+  match Cli.argAsString "--encrypt-pass" with
+  | None -> config |> Option.bind (fun c -> c.EncryptPass)
+  | pass -> pass
+
 let private ignoredSmsNumbers = Cli.argAsSet "--ignore-sms"
 
 let user =

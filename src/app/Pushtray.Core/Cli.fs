@@ -4,7 +4,7 @@ open System
 
 let usage = "\
 usage:
-  pushtray connect [<encrypt-pass>] [options]
+  pushtray connect [options]
   pushtray sms <number> <message> [--device=<name>] [options]
   pushtray list devices [options]
   pushtray (-h | --help)"
@@ -12,6 +12,8 @@ usage:
 let options = "\
 options:
   --access-token=<token>      Set the access token. This will override the
+                              config file value.
+  --encrypt-pass=<pass>       Set the encrypt password. This will override the
                               config file value.
   --no-tray-icon              Don't show a tray icon.
   --ignore-sms <numbers>      Don't show SMS notifications from these numbers

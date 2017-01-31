@@ -38,7 +38,6 @@ Target "Repack" (fun () ->
   let libs =
     [ "FSharp.Core"
       "FSharp.Data"
-      "notify-sharp"
       "websocket-sharp"
       "BouncyCastle.Crypto"
       "DocoptNet" ]

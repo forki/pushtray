@@ -1,9 +1,24 @@
 module Pushtray.Sms
 
 open System.Text.RegularExpressions
+open FSharp.Data
 open Pushtray.Pushbullet
+open Pushtray.Utils
 
-let private selectDevice (devices: Pushbullet.Device[]) =
+type SmsRequest = JsonProvider<"""../../../schemas/send-sms.json""">
+
+let private sendRequest userIden targetDeviceIden phoneNumber message =
+  let ephemeral =
+    SmsRequest.Root
+      ( ``type`` = "messaging_extension_reply",
+        packageName = "com.pushbullet.android",
+        sourceUserIden = userIden,
+        targetDeviceIden = targetDeviceIden,
+        conversationIden = phoneNumber,
+        message = message )
+  Ephemeral.send userIden <| ephemeral.JsonValue.ToString()
+
+let private selectDevice (devices: Device[]) =
   let numDevices = Array.length devices
   let rec readNumber shouldShowMessage =
     if shouldShowMessage then printf "Please enter a number [1 - %d]: " numDevices
@@ -17,25 +32,28 @@ let private selectDevice (devices: Pushbullet.Device[]) =
     devices |> Array.iteri (fun i d -> printfn "%d: %s %s" (i + 1) d.Manufacturer d.Nickname)
     printf "Choose device [1 - %d]: " numDevices
     devices.[(readNumber false) - 1]
-  else
+  else if numDevices = 1 then
     devices.[0]
+  else
+    Logger.fatal "No SMS-capable devices found."
+    exit 1
 
-let send deviceRegex number message =
-  let isSmsCapable (device: Pushbullet.Device) = device.Type = "android"
-
+let send (account: AccountData) deviceRegex number message =
+  let isSmsCapable (device: Device) = device.Type = "android"
   let device =
     deviceRegex
     |> Option.map (fun regex ->
-      devices |> Array.filter (fun d ->
+      account.Devices |> Array.filter (fun d ->
         let doesMatch = Regex.Match(d.Nickname, regex).Success
         if doesMatch && not <| isSmsCapable d then
           Logger.warn <| sprintf "Device '%s' matched but it's not SMS-capable" d.Nickname
         doesMatch && isSmsCapable d))
     |> function
-    | Some d when d.Length > 1 -> selectDevice d
-    | Some d when d.Length = 1 -> Array.head d
-    | _ -> devices |> Array.filter isSmsCapable |> selectDevice
-
-  match Ephemeral.sendSms user.Iden device.Iden number message with
-  | Some req -> req |> (Async.Ignore >> Async.RunSynchronously)
-  | None -> Logger.error "Could not send SMS message"
+    | Some d when d.Length >= 1 -> selectDevice d
+    | _ -> account.Devices |> Array.filter isSmsCapable |> selectDevice
+  let response =
+    sendRequest account.User.Iden device.Iden number message
+    |> Option.bind Async.RunSynchronously
+  match response with
+  | Some _ -> printfn "SMS sent."
+  | None -> Logger.error "Could not send SMS."

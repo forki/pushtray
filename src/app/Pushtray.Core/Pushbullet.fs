@@ -2,6 +2,7 @@ module Pushtray.Pushbullet
 
 open FSharp.Data
 open FSharp.Data.JsonExtensions
+open Pushtray.Cli
 open Pushtray.Config
 open Pushtray.Utils
 
@@ -15,47 +16,50 @@ module Endpoints =
   let devices = "https://api.pushbullet.com/v2/devices"
   let ephemerals = "https://api.pushbullet.com/v2/ephemerals"
 
-let private accessToken =
-  let opt =
-    match Cli.argAsString "--access-token" with
-    | None -> config |> Option.bind (fun c -> c.AccessToken)
-    | token -> token
-  match opt with
-  | Some token -> token
-  | None ->
-    Logger.fatal "Access token not provided."
-    Logger.fatal <| sprintf "Did you create a config file at '%s'?" userConfigDir
-    exit 1
+type AccountData =
+  { User: User.Root
+    Devices: Device[]
+    AccessToken: string
+    EncryptPass: string option }
 
-let private encryptPass =
-  match Cli.argAsString "--encrypt-pass" with
-  | None -> config |> Option.bind (fun c -> c.EncryptPass)
-  | pass -> pass
+let requestAccountData (options: Cli.Options) =
+  let accessToken =
+    let opt =
+      match options.AccessToken with
+      | None -> config |> Option.bind (fun c -> c.AccessToken)
+      | token -> token
+    match opt with
+    | Some token -> token
+    | None ->
+      Logger.fatal "Access token not provided."
+      Logger.fatal <| sprintf "Did you create a config file at '%s'?" userConfigDir
+      exit 1
 
-let private ignoredSmsNumbers = Cli.argAsSet "--ignore-sms"
+  let request endpoint parse =
+    Http.get accessToken endpoint
+    |> Option.bind (tryParseJson parse)
+  let user =
+    match request Endpoints.user User.Parse with
+    | Some v -> v
+    | None ->
+      Logger.fatal "Could not retrieve user info."
+      exit 1
+  let devices =
+    match request Endpoints.devices Devices.Parse with
+    | Some v -> v.Devices
+    | None ->
+      Logger.fatal "Could not retrieve user devices."
+      exit 1
 
-let user =
-  Http.get accessToken Endpoints.user
-  |> Option.bind (tryParseJson User.Parse)
-  |> function
-  | Some user -> user
-  | None ->
-    Logger.fatal "Could not retrieve user info"
-    exit 1
+  let encryptPass =
+    match options.EncryptPass with
+    | None -> config |> Option.bind (fun c -> c.EncryptPass)
+    | pass -> pass
 
-let devices =
-  Http.get accessToken Endpoints.devices
-  |> Option.bind (tryParseJson Devices.Parse)
-  |> function
-  | Some d -> d.Devices
-  | None ->
-    Logger.fatal "Could not retrieve user devices"
-    exit 1
-
-let private deviceMap =
-  devices
-  |> Array.map (fun d -> (d.Iden, d))
-  |> Map.ofArray
+  { User = user
+    Devices = devices
+    AccessToken = accessToken
+    EncryptPass = encryptPass }
 
 module Ephemeral =
   open Notification
@@ -63,93 +67,76 @@ module Ephemeral =
   type Mirror = JsonProvider<"""../../../schemas/mirror.json""", SampleIsList=true>
   type Dismissal = JsonProvider<"""../../../schemas/dismissal.json""", SampleIsList=true>
   type SmsChanged = JsonProvider<"""../../../schemas/sms-changed.json""", InferTypesFromValues=false>
-  type SendSms = JsonProvider<"""../../../schemas/send-sms.json""">
 
-  let private deviceInfo deviceIden =
-    deviceMap.TryFind deviceIden |> Option.map (fun d -> d.Nickname.Trim())
+  let private deviceInfo (devices: Device[]) deviceIden =
+    devices |> Array.tryFind (fun d -> d.Iden = deviceIden)
+    |> Option.map (fun d -> d.Nickname.Trim())
 
-  let private sendEphemeral push =
+  let send account pushJson =
     let encryptedJson password =
-      Crypto.encrypt password user.Iden push
+      Crypto.encrypt password account.User.Iden pushJson
       |> Option.map (sprintf """{"ciphertext": "%s", "encrypted": true}""")
-    encryptPass
-    |> Option.fold (fun _ p -> encryptedJson p) (Some push)
+    account.EncryptPass
+    |> Option.fold (fun _ p -> encryptedJson p) (Some pushJson)
     |> Option.map
       (sprintf """{"push": %s, "type": "push"}"""
-       >> Http.post accessToken Endpoints.ephemerals
+       >> Http.post account.AccessToken Endpoints.ephemerals
        >> Async.choice Some)
 
-  let sendSms sourceUserIden targetDeviceIden phoneNumber message =
-    let ephemeral =
-      SendSms.Root
-        ( ``type`` = "messaging_extension_reply",
-          packageName = "com.pushbullet.android",
-          sourceUserIden = sourceUserIden,
-          targetDeviceIden = targetDeviceIden,
-          conversationIden = phoneNumber,
-          message = message )
-    sendEphemeral <| ephemeral.JsonValue.ToString()
-
-  let dismiss notificationId notificationTag packageName sourceUserIden =
+  let dismiss userIden (push: Mirror.Root) =
     let ephemeral =
       Dismissal.Root
         ( ``type`` = "dismissal",
           sourceDeviceIden = "",
-          sourceUserIden = sourceUserIden,
-          packageName = packageName,
-          notificationId = notificationId,
-          notificationTag = notificationTag )
-    sendEphemeral <| ephemeral.JsonValue.ToString()
+          sourceUserIden = push.SourceUserIden,
+          packageName = push.PackageName,
+          notificationId = push.NotificationId,
+          notificationTag = push.NotificationTag.JsonValue )
+    send userIden <| ephemeral.JsonValue.ToString()
 
   let private handleAction triggerKey =
     // TODO
     ()
 
-  let private handleMirror (push: Mirror.Root) =
+  let private handleMirror account (push: Mirror.Root) =
     Notification.send
       { Summary = Text(sprintf "%s: %s" (push.ApplicationName.Trim()) (push.Title.Trim()))
         Body = Text(push.Body.Trim())
-        DeviceInfo = deviceInfo push.SourceDeviceIden
+        DeviceInfo = deviceInfo account.Devices push.SourceDeviceIden
         Timestamp = None
         Icon = Notification.Base64(push.Icon)
         Actions = push.Actions |> Array.map (fun a ->
           { Label = a.Label
             Handler = fun _ -> handleAction a.TriggerKey })
         Dismissible =
-          if push.Dismissible then
-            Some <| fun () ->
-              dismiss
-                push.NotificationId
-                push.NotificationTag.JsonValue
-                push.PackageName
-                push.SourceUserIden
+          if push.Dismissible then Some <| fun () -> dismiss account push
           else None }
 
   let private handleDismissal (push: Dismissal.Root) =
     Logger.trace <| sprintf "Pushbullet: Dismissal %s" push.PackageName
 
-  let private handleSmsChanged (push: SmsChanged.Root) =
-    if not <| ignoredSmsNumbers.Contains("*") then
+  let private handleSmsChanged account (push: SmsChanged.Root) =
+    if not <| args.Options.IgnoreSms.Contains("*") then
       push.Notifications
-      |> Array.filter (fun notif -> not <| ignoredSmsNumbers.Contains(notif.Title.Trim()))
+      |> Array.filter (fun notif -> not <| args.Options.IgnoreSms.Contains(notif.Title.Trim()))
       |> Array.iter (fun notif ->
         Logger.trace <| sprintf "Pushbullet: Timestamp %s" ((unixTimeStampToDateTime notif.Timestamp).ToString())
         Notification.send
           { Summary = Text(sprintf "%s" <| notif.Title.Trim())
             Body = Text(notif.Body.Trim())
-            DeviceInfo = deviceInfo push.SourceDeviceIden
+            DeviceInfo = deviceInfo account.Devices push.SourceDeviceIden
             Timestamp = Some <| (unixTimeStampToDateTime notif.Timestamp).ToString("hh:mm tt")
             Icon = Notification.Stock("smartphone-symbolic")
             Actions = [||]
             Dismissible = None })
 
-  let handle json =
+  let handle account json =
     Logger.trace <| sprintf "Pushbullet: Message[Json] %s" json
     try
       match JsonValue.Parse(json)?``type``.AsString() with
-        | "mirror" -> handleMirror <| Mirror.Parse(json)
+        | "mirror" -> handleMirror account <| Mirror.Parse(json)
         | "dismissal" -> handleDismissal <| Dismissal.Parse(json)
-        | "sms_changed" -> handleSmsChanged <| SmsChanged.Parse(json)
+        | "sms_changed" -> handleSmsChanged account <| SmsChanged.Parse(json)
         | t ->
           Logger.debug <| sprintf "Unknown push type=%s" t
     with ex ->
@@ -164,51 +151,54 @@ module Stream =
 
   type Stream = JsonProvider<"""../../../schemas/stream.json""", SampleIsList=true>
 
-  let private handleEphemeral (push: Stream.Push option) =
+  let private handleEphemeral account (push: Stream.Push option) =
     match push with
     | Some p ->
       match p.JsonValue.TryGetProperty("encrypted") with
       | Some e when e.AsBoolean() ->
-        Crypto.decrypt (defaultArg encryptPass "") user.Iden p.Ciphertext
-        |> Option.iter Ephemeral.handle
-      | _ -> Ephemeral.handle <| p.JsonValue.ToString()
+        Crypto.decrypt (defaultArg account.EncryptPass "") account.User.Iden p.Ciphertext
+        |> Option.iter (Ephemeral.handle account)
+      | _ -> Ephemeral.handle account <| p.JsonValue.ToString()
     | None -> Logger.debug "Ephemeral message received with no contents"
 
   let private handleNop (heartbeat: Timer) =
     heartbeat.Stop()
     heartbeat.Start()
 
-  let private handleMessage heartbeat json =
+  let private handleMessage account heartbeat json =
     try
       Logger.trace <| sprintf "Pushbullet: Message[Raw] %s" json
       let message = Stream.Parse(json)
       match message.Type with
-      | "push" -> handleEphemeral message.Push
+      | "push" -> handleEphemeral account message.Push
       | "nop" -> handleNop heartbeat
       | t -> Logger.debug <| sprintf "Pushbullet: Message[Unknown] type=%s" t
     with ex ->
       Logger.debug <| sprintf "Failed to handle message (%s)" ex.Message
 
-  let rec connect() =
+  let rec connect options =
+    Logger.trace "Pushbullet: Retrieving account info..."
+    let account = requestAccountData options
+
     Logger.trace "Pushbullet: Printing devices"
-    devices |> Array.iter (fun d -> Logger.info <| sprintf "Device [%s %s] %s" d.Manufacturer d.Model d.Nickname)
+    account.Devices |> Array.iter (fun d ->
+      Logger.info <| sprintf "Device [%s %s] %s" d.Manufacturer d.Model d.Nickname)
 
-    let streamUrl = Endpoints.stream accessToken
-    Logger.info <| sprintf "Connecting to stream %s" streamUrl
-    let websocket = new WebSocket(streamUrl)
+    let websocket = new WebSocket(Endpoints.stream account.AccessToken)
 
-    let reconnect = fun () ->
+    let reconnect() =
       Logger.trace "Pushbullet: Closing stream connection"
-      lock websocket (fun () -> try websocket.Close(CloseStatusCode.Normal) with ex -> Logger.debug ex.Message)
+      lock websocket (fun () ->
+        try websocket.Close(CloseStatusCode.Normal) with ex -> Logger.debug ex.Message)
       Logger.trace "Pushbullet: Reconnecting"
-      connect()
+      connect options
 
     // After 95 seconds of no activity (3 missed nops) we'll assume we need to reconnect
     let heartbeatTimer =
       fun _ -> reconnect()
       |> createTimer 95000.0
 
-    websocket.OnMessage.Add(fun e -> handleMessage heartbeatTimer e.Data)
+    websocket.OnMessage.Add(fun e -> handleMessage account heartbeatTimer e.Data)
     websocket.OnError.Add(fun e -> Logger.error e.Message)
     websocket.OnOpen.Add(fun _ -> Logger.trace "Pushbullet: Opening stream connection")
     websocket.OnClose.Add (fun e ->

@@ -20,18 +20,13 @@ let private logLevelColors =
   |> Map.ofList
 
 let minLogLevel =
-  match (Cli.argWithDefault "--log" "").ToLower() with
+  match Cli.args.Options.Log.ToLower() with
   | "trace" -> LogLevel.Trace
   | "info" -> LogLevel.Info
   | "debug" -> LogLevel.Debug
   | "warn" -> LogLevel.Warn
   | "error" -> LogLevel.Error
-  | str ->
-    #if DEBUG
-    LogLevel.Trace
-    #else
-    LogLevel.Warn
-    #endif
+  | _ -> LogLevel.Warn
 
 let private writeWithColor color (str: string) =
   Console.ForegroundColor <- color

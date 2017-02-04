@@ -10,15 +10,15 @@ let private exitOnSignal (signum: Signum) =
       if (new UnixSignal(signum)).WaitOne() then
         Logger.info <| sprintf "Received %s, exiting..." (System.Enum.GetName(typeof<Signum>, signum))
         Application.Quit()
-        exit 1
+        exit 0
     }
 
 let private connect() =
-  Pushbullet.Stream.connect()
+  Pushbullet.Stream.connect args.Options
   Application.Init()
 
-  if not <| argExists "--no-tray-icon" then
-    TrayIcon.create <| Cli.argWithDefault "--icon-style" "light"
+  if not args.Options.NoTrayIcon then
+    TrayIcon.create args.Options.IconStyle
 
   // Ctrl-c doesn't seem to do anything after Application.Run() is called
   // so we'll handle SIGINT explicitly
@@ -28,16 +28,18 @@ let private connect() =
 
 let private sms() =
   Sms.send
-    (argAsString "--device")
-    (requiredArg "<number>")
-    (requiredArg "<message>")
+    (Pushbullet.requestAccountData args.Options)
+    args.Options.Device
+    (required args.Positional.Number)
+    (required args.Positional.Message)
 
 let private list() =
-  if argExists "devices" then
-    Pushbullet.devices |> Array.iter (fun d ->
+  command "devices" <| fun () ->
+    (Pushbullet.requestAccountData args.Options).Devices
+    |> Array.iter (fun d ->
       printfn "%s (%s %s)" d.Nickname d.Manufacturer d.Model)
 
-let private printHelp() =
+let private help() =
   printfn "%s" usageWithOptions
 
 [<EntryPoint>]
@@ -45,5 +47,5 @@ let main argv =
   command "connect" connect
   command "sms" sms
   command "list" list
-  commands [ "-h"; "--help" ] printHelp
+  commands [ "-h"; "--help" ] help
   0

@@ -3,6 +3,7 @@ module Pushtray.Notification
 open System
 open Gdk
 open Notifications
+open Pushtray.Cli
 open Pushtray.Utils
 
 type NotificationData =
@@ -32,14 +33,12 @@ type Format =
   | Short
 
 let private format =
-  match Cli.argWithDefault "--notify-format" "short" with
+  match args.Options.NotifyFormat with
   | "full" -> Full
   | "short" -> Short
-  | str -> Logger.warn <| sprintf "Unknown --notify-format value '%s'" str; Short
-
-let private lineWrapWidth = int <| Cli.argWithDefault "--notify-line-wrap" "40"
-let private linePadWidth = int <| Cli.argWithDefault "--notify-line-pad" "45"
-let private leftPad = "  "
+  | str ->
+    Logger.warn <| sprintf "Unknown notify-format value '%s'" str
+    Short
 
 let private wrapLine width line =
   let rec loop remaining result words =
@@ -58,18 +57,17 @@ let private padLine width line =
     line + (String.replicate (width - line.Length) " ")
   else
     line)
-  |> sprintf "%s%s" leftPad
+  |> sprintf "%s%s" "  "
 
 let private prettify text =
   text
   |> String.split [|'\n'|]
-  |> Array.collect (wrapLine lineWrapWidth >> String.split [|'\n'|])
-  |> Array.map (padLine linePadWidth)
+  |> Array.collect (wrapLine args.Options.NotifyLineWrap >> String.split [|'\n'|])
+  |> Array.map (padLine args.Options.NotifyLinePad)
   |> String.concat "\n"
 
 let private dismiss asyncRequest (notification: Notification) (args: ActionArgs) =
-  asyncRequest()
-  |> Option.iter (Async.Ignore >> Async.Start)
+  asyncRequest() |> Option.iter (Async.Ignore >> Async.Start)
   notification.Close()
 
 let send data =

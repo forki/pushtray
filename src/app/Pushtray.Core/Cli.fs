@@ -27,6 +27,29 @@ options:
   --log=<log-level>           Enable all logging messages at <log-level>
                               and higher"
 
+exception ArgumentException of string
+
+type Arguments =
+  { Commands: Set<string>
+    Positional: PositionalArgs
+    Options: Options }
+
+and PositionalArgs =
+  { Number: string option
+    Message: string option }
+
+and Options =
+  { Device: string option
+    AccessToken: string option
+    EncryptPass: string option
+    NoTrayIcon: bool
+    IgnoreSms: Set<string>
+    NotifyFormat: string
+    NotifyLineWrap: int
+    NotifyLinePad: int
+    IconStyle: string
+    Log: string }
+
 let usageWithOptions =
   sprintf "%s\n\n%s" usage options
 
@@ -37,37 +60,52 @@ let private parseArgs (argv: string[]) =
     exit 1)
   docopt.Apply(usageWithOptions, argv, help = false, exit = true)
 
-let args = parseArgs <| System.Environment.GetCommandLineArgs().[1..]
+let args =
+  let docoptArgs = parseArgs <| System.Environment.GetCommandLineArgs().[1..]
+  let valueOf func key =
+    if docoptArgs.ContainsKey(key) then
+      match docoptArgs.[key] with
+      | null -> None
+      | v -> Some <| func v
+    else
+      None
+  let argAsString key = key |> valueOf (fun v -> v.ToString())
+  let argAsIntWithDefault key = try argAsString key |> Option.map int with _ -> None
+  let argExists key = key |> valueOf (fun v -> v.IsTrue) |> Option.exists id
+  let argAsSet key =
+    match argAsString key with
+    | Some s -> Set.ofArray <| s.Split [| ',' |]
+    | None -> Set.empty
 
-let private valueOf func key =
-  if args.ContainsKey(key) then
-    match args.[key] with
-    | null -> None
-    | v -> Some <| func v
-  else
-    None
+  { Commands =
+      Set [ "connect"
+            "sms"
+            "list"
+            "devices"
+            "-h"; "--help" ]
+      |> Set.filter argExists
+    Positional =
+      { Number  = argAsString "<number>"
+        Message = argAsString "<message>" }
+    Options =
+      { Device         = argAsString "--device"
+        AccessToken    = argAsString "--access-token"
+        EncryptPass    = argAsString "--encrypt-pass"
+        NoTrayIcon     = argExists "--no-tray-icon"
+        IgnoreSms      = argAsSet "--ignore-sms"
+        NotifyFormat   = defaultArg (argAsString "--notify-format") "short"
+        NotifyLineWrap = int <| defaultArg (argAsString "--notify-line-wrap") "40"
+        NotifyLinePad  = int <| defaultArg (argAsString "--notify-line-pad") "45"
+        IconStyle      = defaultArg (argAsString "--icon-style") "light"
+        Log            = defaultArg (argAsString "--log") "warn" } }
 
-let argAsString key =
-  key |> valueOf (fun v -> v.ToString())
-
-let argAsSet key =
-  match argAsString key with
-  | Some s -> Set.ofArray <| s.Split [| ',' |]
-  | None -> Set.empty
-
-let argExists key =
-  key |> valueOf (fun v -> v.IsTrue) |> Option.exists id
-
-let requiredArg key =
-  match argAsString key with
+let required opt =
+  match opt with
   | Some v -> v
-  | None -> failwith <| sprintf "%s argument is required" key
-
-let argWithDefault key defaultValue =
-  defaultArg (argAsString key) defaultValue
+  | None -> raise <| ArgumentException("Required argument has no value")
 
 let command key func =
-  if argExists key then
+  if args.Commands.Contains key then
     func()
     exit 0
 

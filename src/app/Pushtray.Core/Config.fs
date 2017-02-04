@@ -4,10 +4,9 @@ open System.IO
 open System.Text.RegularExpressions
 open Pushtray.Utils
 
-type Config = {
-  AccessToken: string option
-  EncryptPass: string option
-}
+type Config =
+  { AccessToken: string option
+    EncryptPass: string option }
 
 let private parseConfigLine line =
   let m = Regex.Match(line, "^\s*([\S]+)\s?=\s?([\S]+)$")

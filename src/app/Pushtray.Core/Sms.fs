@@ -7,16 +7,16 @@ open Pushtray.Utils
 
 type SmsRequest = JsonProvider<"""../../../schemas/send-sms.json""">
 
-let private sendRequest userIden targetDeviceIden phoneNumber message =
+let private sendRequest account targetDeviceIden phoneNumber message =
   let ephemeral =
     SmsRequest.Root
       ( ``type`` = "messaging_extension_reply",
         packageName = "com.pushbullet.android",
-        sourceUserIden = userIden,
+        sourceUserIden = account.User.Iden,
         targetDeviceIden = targetDeviceIden,
         conversationIden = phoneNumber,
         message = message )
-  Ephemeral.send userIden <| ephemeral.JsonValue.ToString()
+  Ephemeral.send account <| ephemeral.JsonValue.ToString()
 
 let private selectDevice (devices: Device[]) =
   let numDevices = Array.length devices
@@ -52,7 +52,7 @@ let send (account: AccountData) deviceRegex number message =
     | Some d when d.Length >= 1 -> selectDevice d
     | _ -> account.Devices |> Array.filter isSmsCapable |> selectDevice
   let response =
-    sendRequest account.User.Iden device.Iden number message
+    sendRequest account device.Iden number message
     |> Option.bind Async.RunSynchronously
   match response with
   | Some _ -> printfn "SMS sent."

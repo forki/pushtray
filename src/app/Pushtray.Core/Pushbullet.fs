@@ -126,7 +126,7 @@ module Ephemeral =
             Body = Text(notif.Body.Trim())
             DeviceInfo = deviceInfo account.Devices push.SourceDeviceIden
             Timestamp = Some <| (unixTimeStampToDateTime notif.Timestamp).ToString("hh:mm tt")
-            Icon = Notification.Stock("smartphone-symbolic")
+            Icon = Notification.Stock(defaultArg args.Options.SmsNotifyIcon "phone")
             Actions = [||]
             Dismissible = None })
 

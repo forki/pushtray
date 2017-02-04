@@ -16,6 +16,7 @@ options:
   --encrypt-pass=<pass>       Set the encrypt password. This will override the
                               config file value.
   --no-tray-icon              Don't show a tray icon.
+  --sms-notify-icon=<stock>   Change the stock icon for SMS notifications.
   --ignore-sms <numbers>      Don't show SMS notifications from these numbers
                               <numbers> is a comma-separated list or a single
                               asterisk to ignore all.
@@ -43,6 +44,7 @@ and Options =
     AccessToken: string option
     EncryptPass: string option
     NoTrayIcon: bool
+    SmsNotifyIcon: string option
     IgnoreSms: Set<string>
     NotifyFormat: string
     NotifyLineWrap: int
@@ -92,6 +94,7 @@ let args =
         AccessToken    = argAsString "--access-token"
         EncryptPass    = argAsString "--encrypt-pass"
         NoTrayIcon     = argExists "--no-tray-icon"
+        SmsNotifyIcon  = argAsString "--sms-notify-icon"
         IgnoreSms      = argAsSet "--ignore-sms"
         NotifyFormat   = defaultArg (argAsString "--notify-format") "short"
         NotifyLineWrap = int <| defaultArg (argAsString "--notify-line-wrap") "40"

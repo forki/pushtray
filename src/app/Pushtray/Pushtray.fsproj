@@ -56,9 +56,9 @@
     <Reference Include="Mono.Posix" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Cli.fs" />
     <Compile Include="Logger.fs" />
     <Compile Include="Utils.fs" />
+    <Compile Include="Cli.fs" />
     <Compile Include="Config.fs" />
     <Compile Include="TrayIcon.fs" />
     <Compile Include="Notification.fs" />

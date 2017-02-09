@@ -1,6 +1,7 @@
 module Pushtray.Cli
 
 open System
+open Pushtray.Utils
 
 let usage = "\
 usage:
@@ -16,7 +17,7 @@ options:
   --encrypt-pass=<pass>       Set the encrypt password. This will override the
                               config file value.
   --no-tray-icon              Don't show a tray icon.
-  --sms-notify-icon=<stock>   Change the stock icon for SMS notifications.
+  --sms-notify-icon=<icon>    Change the stock icon for SMS notifications.
   --ignore-sms <numbers>      Don't show SMS notifications from these numbers
                               <numbers> is a comma-separated list or a single
                               asterisk to ignore all.
@@ -27,8 +28,6 @@ options:
   --icon-style=<style>        Customize the tray icon style (light | dark)
   --log=<log-level>           Enable all logging messages at <log-level>
                               and higher"
-
-exception ArgumentException of string
 
 type Arguments =
   { Commands: Set<string>
@@ -93,19 +92,21 @@ let args =
       { Device         = argAsString "--device"
         AccessToken    = argAsString "--access-token"
         EncryptPass    = argAsString "--encrypt-pass"
-        NoTrayIcon     = argExists "--no-tray-icon"
+        NoTrayIcon     = argExists   "--no-tray-icon"
         SmsNotifyIcon  = argAsString "--sms-notify-icon"
-        IgnoreSms      = argAsSet "--ignore-sms"
-        NotifyFormat   = defaultArg (argAsString "--notify-format") "short"
-        NotifyLineWrap = int <| defaultArg (argAsString "--notify-line-wrap") "40"
-        NotifyLinePad  = int <| defaultArg (argAsString "--notify-line-pad") "45"
-        IconStyle      = defaultArg (argAsString "--icon-style") "light"
-        Log            = defaultArg (argAsString "--log") "warn" } }
+        IgnoreSms      = argAsSet    "--ignore-sms"
+        NotifyFormat   = argAsString "--notify-format"    |> Option.getOrElse "short"
+        NotifyLineWrap = argAsString "--notify-line-wrap" |> Option.getOrElse "40" |> int
+        NotifyLinePad  = argAsString "--notify-line-pad"  |> Option.getOrElse "45" |> int
+        IconStyle      = argAsString "--icon-style"       |> Option.getOrElse "light"
+        Log            = argAsString "--log"              |> Option.getOrElse "warn" } }
 
 let required opt =
   match opt with
   | Some v -> v
-  | None -> raise <| ArgumentException("Required argument has no value")
+  | None ->
+    Logger.fatal "Required argument has no value"
+    exit 1
 
 let command key func =
   if args.Commands.Contains key then

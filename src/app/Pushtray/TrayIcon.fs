@@ -8,8 +8,8 @@ type IconStyle =
   | Light
   | Dark
 
-let private iconStyleFromString style =
-  match style with
+let private iconStyleFromString str =
+  match str with
   | "light" -> Light
   | "dark" -> Dark
   | str ->

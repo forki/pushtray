@@ -126,7 +126,7 @@ module Ephemeral =
             Body = Text(notif.Body.Trim())
             DeviceInfo = deviceInfo account.Devices push.SourceDeviceIden
             Timestamp = Some <| (unixTimeStampToDateTime notif.Timestamp).ToString("hh:mm tt")
-            Icon = Notification.Stock(defaultArg args.Options.SmsNotifyIcon "phone")
+            Icon = Notification.Stock(args.Options.SmsNotifyIcon |> Option.getOrElse "phone")
             Actions = [||]
             Dismissible = None })
 
@@ -156,7 +156,7 @@ module Stream =
     | Some p ->
       match p.JsonValue.TryGetProperty("encrypted") with
       | Some e when e.AsBoolean() ->
-        Crypto.decrypt (defaultArg account.EncryptPass "") account.User.Iden p.Ciphertext
+        Crypto.decrypt (account.EncryptPass |> Option.getOrElse "") account.User.Iden p.Ciphertext
         |> Option.iter (Ephemeral.handle account)
       | _ -> Ephemeral.handle account <| p.JsonValue.ToString()
     | None -> Logger.debug "Ephemeral message received with no contents"

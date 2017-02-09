@@ -75,8 +75,8 @@ let send data =
     match format with
     | Full ->
       sprintf "%s %s"
-        (defaultArg data.DeviceInfo "")
-        (defaultArg data.Timestamp "")
+        (data.DeviceInfo |> Option.getOrElse "")
+        (data.Timestamp |> Option.getOrElse "")
       |> prettify
       |> sprintf "\n<i>%s</i>"
     | Short -> ""

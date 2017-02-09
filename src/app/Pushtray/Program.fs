@@ -44,6 +44,7 @@ let private help() =
 
 [<EntryPoint>]
 let main argv =
+  Logger.setMinLogLevel Cli.args.Options.Log
   command "connect" connect
   command "sms" sms
   command "list" list

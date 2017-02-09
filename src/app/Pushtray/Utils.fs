@@ -8,10 +8,10 @@ open FSharp.Data
 open FSharp.Data.HttpRequestHeaders
 
 module Option =
-  let orElse func (opt: 'a option) =
+  let getOrElse defaultValue (opt: 'a option) =
     match opt with
     | Some v -> v
-    | None -> func()
+    | None -> defaultValue
 
 module String =
   let split separators (str: string) =
@@ -24,10 +24,10 @@ module Async =
       return f value
     }
 
-  let choice success (asyncChoice: Async<Choice<string, exn>>) =
+  let choice onSuccess (asyncChoice: Async<Choice<string, exn>>) =
     asyncChoice |> map (fun choice ->
       match choice with
-      | Choice1Of2 result -> success result
+      | Choice1Of2 result -> onSuccess result
       | Choice2Of2 (ex: Exception) ->
         Logger.debug <| sprintf "AsyncChoice: %s" ex.Message
         None)

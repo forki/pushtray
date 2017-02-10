@@ -3,6 +3,7 @@ module Pushtray.TrayIcon
 open System.IO
 open System.Threading
 open Gtk
+open Pushtray.Cli
 open Pushtray.Utils
 
 type IconStyle =
@@ -107,11 +108,14 @@ type TrayIcon(iconStyle: string) =
     let cancel = new CancellationTokenSource()
     Async.Start <|
       async {
-        for _ in 0 .. 3 do
-          if not <| cancel.IsCancellationRequested then
-            for state in [| Sync0; Sync1; Sync2; Sync3 |] do
-                update state
-                Thread.Sleep(250)
+        if not args.Options.NoIconAnimations then
+          for _ in 0 .. 3 do
+            if not <| cancel.IsCancellationRequested then
+              for state in [| Sync0; Sync1; Sync2; Sync3 |] do
+                  update state
+                  Thread.Sleep(250)
+        else
+          update Sync0
       }
     cancelSyncing |> Option.iter (fun c -> c.Cancel())
     lock this (fun _ -> cancelSyncing <- Some cancel)

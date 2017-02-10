@@ -17,6 +17,7 @@ options:
   --encrypt-pass=<pass>       Set the encrypt password. This will override the
                               config file value.
   --no-tray-icon              Don't show a tray icon.
+  --no-icon-animations        Only show static tray icons.
   --sms-notify-icon=<icon>    Change the stock icon for SMS notifications.
   --ignore-sms <numbers>      Don't show SMS notifications from these numbers
                               <numbers> is a comma-separated list or a single
@@ -43,6 +44,7 @@ and Options =
     AccessToken: string option
     EncryptPass: string option
     NoTrayIcon: bool
+    NoIconAnimations: bool
     SmsNotifyIcon: string option
     IgnoreSms: Set<string>
     NotifyFormat: string
@@ -89,17 +91,18 @@ let args =
       { Number  = argAsString "<number>"
         Message = argAsString "<message>" }
     Options =
-      { Device         = argAsString "--device"
-        AccessToken    = argAsString "--access-token"
-        EncryptPass    = argAsString "--encrypt-pass"
-        NoTrayIcon     = argExists   "--no-tray-icon"
-        SmsNotifyIcon  = argAsString "--sms-notify-icon"
-        IgnoreSms      = argAsSet    "--ignore-sms"
-        NotifyFormat   = argAsString "--notify-format"    |> Option.getOrElse "short"
-        NotifyLineWrap = argAsString "--notify-line-wrap" |> Option.getOrElse "40" |> int
-        NotifyLinePad  = argAsString "--notify-line-pad"  |> Option.getOrElse "45" |> int
-        IconStyle      = argAsString "--icon-style"       |> Option.getOrElse "light"
-        Log            = argAsString "--log"              |> Option.getOrElse "warn" } }
+      { Device            = argAsString "--device"
+        AccessToken       = argAsString "--access-token"
+        EncryptPass       = argAsString "--encrypt-pass"
+        NoTrayIcon        = argExists   "--no-tray-icon"
+        NoIconAnimations  = argExists   "--no-icon-animations"
+        SmsNotifyIcon     = argAsString "--sms-notify-icon"
+        IgnoreSms         = argAsSet    "--ignore-sms"
+        NotifyFormat      = argAsString "--notify-format"    |> Option.getOrElse "short"
+        NotifyLineWrap    = argAsString "--notify-line-wrap" |> Option.getOrElse "40" |> int
+        NotifyLinePad     = argAsString "--notify-line-pad"  |> Option.getOrElse "45" |> int
+        IconStyle         = argAsString "--icon-style"       |> Option.getOrElse "light"
+        Log               = argAsString "--log"              |> Option.getOrElse "warn" } }
 
 let required opt =
   match opt with

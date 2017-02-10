@@ -41,7 +41,8 @@ module Http =
     try
       Http.RequestString
         ( url,
-          headers = [ Accept HttpContentTypes.Json; tokenHeader accessToken ] )
+          headers = [ Accept HttpContentTypes.Json; tokenHeader accessToken ],
+          timeout = 5000 )
       |> Some
     with ex ->
       Logger.error <| sprintf "Request(GET): %s (%s)" ex.Message url
@@ -51,7 +52,8 @@ module Http =
     Logger.trace <| sprintf "RequestAsync(GET): %s" url
     Http.AsyncRequestString
       ( url,
-        headers = [ Accept HttpContentTypes.Json; tokenHeader accessToken ] )
+        headers = [ Accept HttpContentTypes.Json; tokenHeader accessToken ],
+        timeout = 5000 )
     |> Async.Catch
 
   let post accessToken url body =
@@ -59,7 +61,8 @@ module Http =
     Http.AsyncRequestString
       ( url,
         headers = [ ContentType HttpContentTypes.Json; tokenHeader accessToken ],
-        body = TextRequest body )
+        body = TextRequest body,
+        timeout = 5000 )
     |> Async.Catch
 
 let tryParseJson parse result =

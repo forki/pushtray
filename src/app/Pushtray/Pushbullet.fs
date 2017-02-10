@@ -4,6 +4,7 @@ open FSharp.Data
 open FSharp.Data.JsonExtensions
 open Pushtray.Cli
 open Pushtray.Config
+open Pushtray.TrayIcon
 open Pushtray.Utils
 
 type User = JsonProvider<"""../../../schemas/user.json""">
@@ -32,32 +33,40 @@ let requestAccountData (options: Cli.Options) =
     | Some token -> token
     | None ->
       Logger.fatal "Access token not provided."
-      Logger.fatal <| sprintf "Did you create a config file at '%s'?" userConfigDir
+      Logger.fatal <| sprintf "Create a config file %s/config?" userConfigDir
       exit 1
 
   let request endpoint parse =
     Http.get accessToken endpoint
     |> Option.bind (tryParseJson parse)
-  let user =
-    match request Endpoints.user User.Parse with
+
+  let rec retrieveOrRetry attempts func =
+    match func() with
     | Some v -> v
     | None ->
-      Logger.fatal "Could not retrieve user info."
-      exit 1
-  let devices =
-    match request Endpoints.devices Devices.Parse with
-    | Some v -> v.Devices
-    | None ->
-      Logger.fatal "Could not retrieve user devices."
-      exit 1
+      if attempts > 0 then
+        Logger.warn "Could not retrieve user data, retrying in 60 seconds..."
+        System.Threading.Thread.Sleep(60000)
+        retrieveOrRetry (attempts - 1) func
+      else
+        Logger.fatal "Could not retrieve required data, exiting..."
+        exit 1
+
+  let getUser() =
+    let result = request Endpoints.user User.Parse
+    result
+
+  let getDevices() =
+    let result = request Endpoints.devices Devices.Parse
+    result |> Option.map (fun v -> v.Devices)
 
   let encryptPass =
     match options.EncryptPass with
     | None -> config |> Option.bind (fun c -> c.EncryptPass)
     | pass -> pass
 
-  { User = user
-    Devices = devices
+  { User = getUser |> retrieveOrRetry 5
+    Devices = getDevices |> retrieveOrRetry 5
     AccessToken = accessToken
     EncryptPass = encryptPass }
 
@@ -151,6 +160,21 @@ module Stream =
 
   type Stream = JsonProvider<"""../../../schemas/stream.json""", SampleIsList=true>
 
+  type Heartbeat(reconnect: unit -> unit, trayIcon: TrayIcon option) =
+    // After 95 seconds of no activity (3 missed nops) we'll assume we need to reconnect
+    let timer =
+      (fun _ ->
+        trayIcon |> Option.iter (fun t -> t.ShowSyncing())
+        reconnect())
+      |> createTimer 95000.0
+
+    do timer.Enabled <- true
+
+    member this.OnNop() =
+      trayIcon |> Option.iter (fun t -> t.ShowConnected())
+      timer.Stop()
+      timer.Start()
+
   let private handleEphemeral account (push: Stream.Push option) =
     match push with
     | Some p ->
@@ -161,44 +185,37 @@ module Stream =
       | _ -> Ephemeral.handle account <| p.JsonValue.ToString()
     | None -> Logger.debug "Ephemeral message received with no contents"
 
-  let private handleNop (heartbeat: Timer) =
-    heartbeat.Stop()
-    heartbeat.Start()
-
-  let private handleMessage account heartbeat json =
+  let private handleMessage account (heartbeat: Heartbeat) json =
     try
       Logger.trace <| sprintf "Pushbullet: Message[Raw] %s" json
       let message = Stream.Parse(json)
       match message.Type with
       | "push" -> handleEphemeral account message.Push
-      | "nop" -> handleNop heartbeat
+      | "nop" -> heartbeat.OnNop()
       | t -> Logger.debug <| sprintf "Pushbullet: Message[Unknown] type=%s" t
     with ex ->
       Logger.debug <| sprintf "Failed to handle message (%s)" ex.Message
 
-  let rec connect options =
+  let rec connect (trayIcon: TrayIcon option) options =
+    trayIcon |> Option.iter (fun t -> t.ShowSyncing())
+
     Logger.trace "Pushbullet: Retrieving account info..."
     let account = requestAccountData options
-
-    Logger.trace "Pushbullet: Printing devices"
     account.Devices |> Array.iter (fun d ->
       Logger.info <| sprintf "Device [%s %s] %s" d.Manufacturer d.Model d.Nickname)
 
     let websocket = new WebSocket(Endpoints.stream account.AccessToken)
 
     let reconnect() =
-      Logger.trace "Pushbullet: Closing stream connection"
       lock websocket (fun () ->
+        Logger.trace "Pushbullet: Closing stream connection"
         try websocket.Close(CloseStatusCode.Normal) with ex -> Logger.debug ex.Message)
       Logger.trace "Pushbullet: Reconnecting"
-      connect options
+      connect trayIcon options
 
-    // After 95 seconds of no activity (3 missed nops) we'll assume we need to reconnect
-    let heartbeatTimer =
-      fun _ -> reconnect()
-      |> createTimer 95000.0
+    let heartbeat = new Heartbeat(reconnect, trayIcon)
 
-    websocket.OnMessage.Add(fun e -> handleMessage account heartbeatTimer e.Data)
+    websocket.OnMessage.Add(fun e -> handleMessage account heartbeat e.Data)
     websocket.OnError.Add(fun e -> Logger.error e.Message)
     websocket.OnOpen.Add(fun _ -> Logger.trace "Pushbullet: Opening stream connection")
     websocket.OnClose.Add (fun e ->
@@ -206,7 +223,7 @@ module Stream =
       match LanguagePrimitives.EnumOfValue<uint16, CloseStatusCode> e.Code with
       | CloseStatusCode.Normal | CloseStatusCode.Away -> ()
       | _ ->
-        Logger.trace "Pushbullet: Attempting to reconnect in 5 seconds"
-        (createTimer 5000.0 (fun _ -> reconnect())).Start())
+        Logger.trace "Pushbullet: Websocket closed abnormally, exiting..."
+        exit 1)
 
     websocket.ConnectAsync()

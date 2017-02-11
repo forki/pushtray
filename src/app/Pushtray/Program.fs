@@ -35,6 +35,9 @@ let private list() =
 let private help() =
   printfn "%s" usageWithOptions
 
+let private version() =
+  printfn "%s" version
+
 [<EntryPoint>]
 let main argv =
   Logger.setMinLogLevel Cli.args.Options.Log
@@ -42,4 +45,5 @@ let main argv =
   command "sms" sms
   command "list" list
   commands [ "-h"; "--help" ] help
+  command "--version" version
   0

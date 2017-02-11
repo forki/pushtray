@@ -8,7 +8,8 @@ usage:
   pushtray connect [options]
   pushtray sms <number> <message> [--device=<name>] [options]
   pushtray list devices [options]
-  pushtray (-h | --help)"
+  pushtray (-h | --help)
+  pushtray --version"
 
 let options = "\
 options:
@@ -29,6 +30,8 @@ options:
   --icon-style=<style>        Customize the tray icon style (light | dark)
   --log=<log-level>           Enable all logging messages at <log-level>
                               and higher"
+
+let version = sprintf "Pushtray %s" AssemblyInfo.Version
 
 type Arguments =
   { Commands: Set<string>
@@ -85,7 +88,8 @@ let args =
             "sms"
             "list"
             "devices"
-            "-h"; "--help" ]
+            "-h"; "--help"
+            "--version" ]
       |> Set.filter argExists
     Positional =
       { Number  = argAsString "<number>"

@@ -44,7 +44,7 @@ let private getAppDataAbsolutePath relativePath =
     |> List.map (fun p -> Path.Combine [| p; relativePath |])
     |> List.tryFind File.Exists)
 
-let private iconData iconStyle =
+let private iconMap iconStyle =
   let basePath =
     match iconStyleFromString iconStyle with
     | Light -> "pushbullet-tray-light"
@@ -67,13 +67,13 @@ let private iconData iconStyle =
     (state, data))
   |> Map.ofList
 
-let iconDataForState state (paths: Map<IconState, IconData>) =
-  paths
+let iconDataForState state (map: Map<IconState, IconData>) =
+  map
   |> Map.tryFind state
   |> Option.getOrElse (Stock("phone"))
 
 type TrayIcon(iconStyle: string) =
-  let data = iconData iconStyle
+  let icons = iconMap iconStyle
 
   let onTrayIconPopup args =
     let menuItemQuit = new ImageMenuItem("Quit")
@@ -88,7 +88,7 @@ type TrayIcon(iconStyle: string) =
 
   let icon =
     let trayIcon =
-      match iconDataForState IconState.Connected data with
+      match iconDataForState IconState.Connected icons with
       | File(p) -> new StatusIcon(p)
       | Stock(name) -> StatusIcon.NewFromIconName(name)
     trayIcon.TooltipText <- "Pushtray"
@@ -98,7 +98,7 @@ type TrayIcon(iconStyle: string) =
 
   let update state =
     Gtk.Application.Invoke (fun _ _ ->
-      match iconDataForState state data with
+      match iconDataForState state icons with
       | File(p) -> icon.Pixbuf <- p
       | Stock(name) -> icon.IconName <- name)
 

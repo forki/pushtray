@@ -64,6 +64,8 @@
     <Compile Include="Notification.fs" />
     <Compile Include="Crypto.fs" />
     <Compile Include="Pushbullet.fs" />
+    <Compile Include="Ephemeral.fs" />
+    <Compile Include="Stream.fs" />
     <Compile Include="Sms.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

@@ -1,5 +1,6 @@
 open Gtk
 open Pushtray
+open Pushtray.Stream
 open Pushtray.TrayIcon
 open Pushtray.Cli
 
@@ -10,7 +11,11 @@ let private connect() =
     else None
   Async.Start <|
     async {
-      Pushbullet.Stream.connect trayIcon args.Options
+      let view =
+        trayIcon |> Option.map (fun t ->
+          { OnConnected = t.ShowConnected
+            OnDisconnected = t.ShowSyncing })
+      connect view args.Options
     }
   Application.Run()
 

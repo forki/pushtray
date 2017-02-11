@@ -4,7 +4,7 @@ open System.Reflection
 open System.Resources
 
 let [<Literal>] Product = "Pushtray"
-let [<Literal>] Version = "0.1.0"
+let [<Literal>] Version = "0.1.1"
 
 [<assembly: AssemblyProduct(Product)>]
 [<assembly: AssemblyTitle(Product)>]

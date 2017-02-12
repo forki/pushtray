@@ -108,7 +108,7 @@ type TrayIcon(iconStyle: string) =
     let cancel = new CancellationTokenSource()
     Async.Start <|
       async {
-        if not args.Options.NoIconAnimations then
+        if args.Options.EnableIconAnimations then
           for _ in 0 .. 3 do
             if not <| cancel.IsCancellationRequested then
               for state in [| Sync0; Sync1; Sync2; Sync3 |] do

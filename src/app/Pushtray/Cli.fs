@@ -59,6 +59,8 @@ and Options =
 let usageWithOptions =
   sprintf "%s\n\n%s" usage options
 
+type DocoptArgs = Collections.Generic.IDictionary<string, DocoptNet.ValueObject>
+
 let private parseArgs (argv: string[]) =
   let docopt = new DocoptNet.Docopt()
   docopt.PrintExit.Add(fun _ ->
@@ -67,14 +69,22 @@ let private parseArgs (argv: string[]) =
   docopt.Apply(usageWithOptions, argv, help = false, exit = true)
 
 let args =
-  let docoptArgs = parseArgs <| System.Environment.GetCommandLineArgs().[1..]
+  let docoptArgs: DocoptArgs option =
+    #if INTERACTIVE
+    None
+    #else
+    Some (parseArgs <| System.Environment.GetCommandLineArgs().[1..])
+    #endif
+
   let valueOf func key =
-    if docoptArgs.ContainsKey(key) then
-      match docoptArgs.[key] with
+    docoptArgs |> Option.bind (fun a ->
+    if a.ContainsKey(key) then
+      match a.[key] with
       | null -> None
       | v -> Some <| func v
     else
-      None
+      None)
+
   let argAsString key = key |> valueOf (fun v -> v.ToString())
   let argAsIntWithDefault key = try argAsString key |> Option.map int with _ -> None
   let argExists key = key |> valueOf (fun v -> v.IsTrue) |> Option.exists id

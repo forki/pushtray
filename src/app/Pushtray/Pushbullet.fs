@@ -6,8 +6,11 @@ open Pushtray.Cli
 open Pushtray.Config
 open Pushtray.Utils
 
-type User = JsonProvider<"""../../../schemas/user.json""">
-type Devices = JsonProvider<"""../../../schemas/devices.json""">
+let [<Literal>] private UserSample = SampleDir + "user.json"
+let [<Literal>] private DevicesSample = SampleDir + "devices.json"
+
+type User = JsonProvider<UserSample>
+type Devices = JsonProvider<DevicesSample>
 type Device =  Devices.Devicis
 
 module Endpoints =

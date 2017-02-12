@@ -7,6 +7,8 @@ open System.Timers
 open FSharp.Data
 open FSharp.Data.HttpRequestHeaders
 
+let [<Literal>] SampleDir = __SOURCE_DIRECTORY__ + "/../../../samples/"
+
 module Option =
   let getOrElse defaultValue (opt: 'a option) =
     match opt with

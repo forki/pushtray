@@ -6,24 +6,25 @@ open WebSocketSharp
 open Pushtray.Pushbullet
 open Pushtray.Utils
 
-type Stream = JsonProvider<"""../../../schemas/stream.json""", SampleIsList=true>
+let [<Literal>] private StreamSample = SampleDir + "stream.json"
+type Stream = JsonProvider<StreamSample, SampleIsList=true>
 
-type ViewUpdate =
+type Update =
   { OnConnected: unit -> unit
     OnDisconnected: unit -> unit }
 
-type Heartbeat(reconnect: unit -> unit, view: ViewUpdate option) =
+type Heartbeat(reconnect: unit -> unit, update: Update option) =
   // After 95 seconds of no activity (3 missed nops) we'll assume we need to reconnect
   let timer =
     (fun _ ->
-      view |> Option.iter (fun v -> v.OnDisconnected())
+      update |> Option.iter (fun v -> v.OnDisconnected())
       reconnect())
     |> createTimer 95000.0
 
   do timer.Enabled <- true
 
   member this.OnNop() =
-    view |> Option.iter (fun v -> v.OnConnected())
+    update |> Option.iter (fun v -> v.OnConnected())
     timer.Stop()
     timer.Start()
 
@@ -48,8 +49,8 @@ let private handleMessage account (heartbeat: Heartbeat) json =
   with ex ->
     Logger.debug <| sprintf "Failed to handle message (%s)" ex.Message
 
-let rec connect (view: ViewUpdate option) options =
-  view |> Option.iter (fun v -> v.OnDisconnected())
+let rec connect (update: Update option) options =
+  update |> Option.iter (fun v -> v.OnDisconnected())
 
   Logger.trace "Pushbullet: Retrieving account info..."
   let account = requestAccountData options
@@ -63,9 +64,9 @@ let rec connect (view: ViewUpdate option) options =
       Logger.trace "Pushbullet: Closing stream connection"
       try websocket.Close(CloseStatusCode.Normal) with ex -> Logger.debug ex.Message)
     Logger.trace "Pushbullet: Reconnecting"
-    connect view options
+    connect update options
 
-  let heartbeat = new Heartbeat(reconnect, view)
+  let heartbeat = new Heartbeat(reconnect, update)
 
   websocket.OnMessage.Add(fun e -> handleMessage account heartbeat e.Data)
   websocket.OnError.Add(fun e -> Logger.error e.Message)

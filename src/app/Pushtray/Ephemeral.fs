@@ -7,9 +7,13 @@ open Pushtray.Notification
 open Pushtray.Cli
 open Pushtray.Utils
 
-type Mirror = JsonProvider<"""../../../schemas/mirror.json""", SampleIsList=true>
-type Dismissal = JsonProvider<"""../../../schemas/dismissal.json""", SampleIsList=true>
-type SmsChanged = JsonProvider<"""../../../schemas/sms-changed.json""", InferTypesFromValues=false>
+let [<Literal>] private MirrorSample = SampleDir + "mirror.json"
+let [<Literal>] private DismissalSample = SampleDir + "dismissal.json"
+let [<Literal>] private SmsChangedSample = SampleDir + "sms-changed.json"
+
+type Mirror = JsonProvider<MirrorSample, SampleIsList=true>
+type Dismissal = JsonProvider<DismissalSample, SampleIsList=true>
+type SmsChanged = JsonProvider<SmsChangedSample, InferTypesFromValues=false>
 
 let private deviceInfo (devices: Device[]) deviceIden =
   devices |> Array.tryFind (fun d -> d.Iden = deviceIden)

@@ -11,11 +11,11 @@ let private connect() =
     else None
   Async.Start <|
     async {
-      let view =
+      let update =
         trayIcon |> Option.map (fun t ->
           { OnConnected = t.ShowConnected
             OnDisconnected = t.ShowSyncing })
-      connect view args.Options
+      connect update args.Options
     }
   Application.Run()
 

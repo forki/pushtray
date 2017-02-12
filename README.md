@@ -28,18 +28,19 @@ Options:
   --notify-line-pad=<pad-to>  Set the minimum line width of notifications
   --icon-style=<style>        Customize the tray icon style (light | dark)
   --log=<log-level>           Enable all logging messages at <log-level>
+                              and higher
 ```
 
 ### Build instructions
 
 **Arch Linux**
 
-1. First install the required dependencies:
+First install the required dependencies:
 ``` console
 $ sudo pacman -S mono fsharp notify-sharp-3
 ```
 
-2. Then you should be able to simply do the following:
+Then you should be able to simply do the following:
 ``` console
 $ git clone https://github.com/jjpatel/pushtray
 $ cd pushtray

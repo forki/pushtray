@@ -1,6 +1,6 @@
 # Pushtray
 
-Simple phone notifications on Linux via Pushbullet.
+Android phone notifications on Linux via Pushbullet.
 
 ### Usage
 
@@ -17,7 +17,7 @@ Options:
   --encrypt-pass=<pass>       Set the encrypt password. This will override the
                               config file value.
   --no-tray-icon              Don't show a tray icon.
-  --no-icon-animations        Only show static tray icons.
+  --enable-icon-animations    Show tray icon animations.
   --sms-notify-icon=<icon>    Change the stock icon for SMS notifications.
   --ignore-sms <numbers>      Don't show SMS notifications from these numbers.
                               <numbers> is a comma-separated list or a single

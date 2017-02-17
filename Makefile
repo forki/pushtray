@@ -2,11 +2,8 @@
 
 PKG_NAME = pushtray
 PREFIX ?= /usr
-BIN_DIR = $(PREFIX)/bin
-SHARE_DIR = $(PREFIX)/share
 
 MONO = /usr/bin/mono
-MONO_INSTALL_DIR = $(PREFIX)/lib/mono
 FAKE = packages/FAKE/tools/FAKE.exe
 PAKET = .paket/paket.exe
 PAKET_BOOTSTRAP = .paket/paket.bootstrapper.exe
@@ -25,7 +22,7 @@ clean:
 	$(MONO) $(FAKE) clean
 
 install:
-	install -D -m644 build/dist/pushtray.exe $(MONO_INSTALL_DIR)/$(PKG_NAME)/pushtray.exe
-	install -D scripts/pushtray $(BIN_DIR)/pushtray
-	mkdir -p $(SHARE_DIR)/$(PKG_NAME)
-	cp -R share/icons $(SHARE_DIR)/$(PKG_NAME)
+	install -Dm644 build/dist/pushtray.exe $(PREFIX)/lib/$(PKG_NAME)/pushtray.exe
+	install -D scripts/pushtray $(PREFIX)/bin/pushtray
+	install -dm755 $(PREFIX)/share/$(PKG_NAME)
+	cp -R share/icons $(PREFIX)/share/$(PKG_NAME)

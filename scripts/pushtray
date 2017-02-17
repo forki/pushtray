@@ -1,2 +1,2 @@
 #!/bin/sh
-exec /usr/bin/mono $MONO_OPTIONS "$(dirname $0)/../lib/mono/pushtray/pushtray.exe" "$@"
+exec /usr/bin/mono $MONO_OPTIONS "$(dirname $0)/../lib/pushtray/pushtray.exe" "$@"

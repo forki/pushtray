@@ -33,7 +33,11 @@ let encrypt (password: string) (salt: string) (message: string) =
     cipher.Init(true, Parameters.ParametersWithIV(key, iv))
     let bytes = cipher.DoFinal(Text.Encoding.UTF8.GetBytes(message))
     let tagStart = bytes.Length - 16
-    Array.concat [| [| byte (0x31) |]; bytes.[tagStart..]; iv; bytes.[0..tagStart - 1] |]
+    Array.concat
+      [| [| byte (0x31) |]
+         bytes.[tagStart..]
+         iv
+         bytes.[0..tagStart - 1] |]
     |> Convert.ToBase64String
     |> Some
   with ex ->
@@ -41,7 +45,7 @@ let encrypt (password: string) (salt: string) (message: string) =
     Notification.send
       { Summary = Text("Pushtray: Encryption failure")
         Body = Text("Something went wrong! The push couldn't be sent.")
-        DeviceInfo = None
+        Device = None
         Timestamp = None
         Icon =  Notification.Stock(Gtk.Stock.Info)
         Actions = [||]
@@ -67,7 +71,7 @@ let decrypt (password: string) (salt: string) (ciphertext: string) =
     Notification.send
       { Summary = Text("Pushtray: Decryption failure")
         Body = Text("Your password might be incorrect.")
-        DeviceInfo = None
+        Device = None
         Timestamp = None
         Icon =  Notification.Stock(Gtk.Stock.Info)
         Actions = [||]

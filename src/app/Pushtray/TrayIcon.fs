@@ -10,8 +10,8 @@ type IconStyle =
   | Light
   | Dark
 
-let private iconStyleFromString str =
-  match str with
+let private iconStyleFromString (str: string) =
+  match str.ToLower() with
   | "light" -> Light
   | "dark" -> Dark
   | str ->
@@ -25,8 +25,7 @@ type IconState =
   | Sync2
   | Sync3
 
-let private iconFileNameSuffix state =
-  match state with
+let private iconFileNameSuffix = function
   | Connected -> ""
   | Sync0 -> "-sync0"
   | Sync1 -> "-sync1"
@@ -38,13 +37,13 @@ type IconData =
   | Stock of string
 
 let private getAppDataAbsolutePath relativePath =
-  appDataDirs
+  Environment.appDataDirs
   |> Option.bind (fun paths ->
     paths
     |> List.map (fun p -> Path.Combine [| p; relativePath |])
     |> List.tryFind File.Exists)
 
-let private iconMap iconStyle =
+let private iconMap (iconStyle: string) =
   let basePath =
     match iconStyleFromString iconStyle with
     | Light -> "pushbullet-tray-light"
@@ -88,7 +87,7 @@ type TrayIcon(iconStyle: string) =
 
   let icon =
     let trayIcon =
-      match iconDataForState IconState.Connected icons with
+      match iconDataForState IconState.Sync0 icons with
       | File(p) -> new StatusIcon(p)
       | Stock(name) -> StatusIcon.NewFromIconName(name)
     trayIcon.TooltipText <- "Pushtray"

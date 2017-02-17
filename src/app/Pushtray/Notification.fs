@@ -3,14 +3,15 @@ module Pushtray.Notification
 open System
 open Gdk
 open Notifications
+open Pushtray.Pushbullet
 open Pushtray.Cli
 open Pushtray.Utils
 
 type NotificationData =
   { Summary: NotificationText
     Body: NotificationText
-    DeviceInfo: string option
-    Timestamp: string option
+    Device: Device option
+    Timestamp: decimal option
     Icon: Icon
     Actions: Action[]
     Dismissible: (unit -> Async<string option> option) option }
@@ -74,9 +75,12 @@ let send data =
   let footer =
     match format with
     | Full ->
-      sprintf "%s %s"
-        (data.DeviceInfo |> Option.getOrElse "")
-        (data.Timestamp |> Option.getOrElse "")
+      let deviceName = data.Device |> Option.fold (fun _ v -> v.Nickname) ""
+      let timestamp =
+        match data.Timestamp with
+        | Some t -> (unixTimeStampToDateTime t).ToString("hh:mm tt")
+        | None -> ""
+      sprintf "%s %s" deviceName timestamp
       |> prettify
       |> sprintf "\n<i>%s</i>"
     | Short -> ""

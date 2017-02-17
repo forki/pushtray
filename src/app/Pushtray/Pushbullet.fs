@@ -35,7 +35,7 @@ let rec private retrieveOrRetry attempts func =
       retrieveOrRetry (attempts - 1) func
     else
       Logger.fatal "Could not retrieve required data, exiting..."
-      exit 1
+      quitApplication 1
 
 let requestAccountData (options: Cli.Options) =
   let accessToken =
@@ -47,27 +47,29 @@ let requestAccountData (options: Cli.Options) =
     | Some token -> token
     | None ->
       Logger.fatal "Access token not provided."
-      Logger.fatal <| sprintf "Create a config file %s/config?" userConfigDir
-      exit 1
+      [ "\nCreate your access token and then either:"
+        "1. Supply it with the --access-token option."
+        sprintf "2. Create a config file at %s/config with the following line:" Environment.userConfigDir
+        "   access_token = <token>" ]
+      |> List.iter (fun s -> System.Console.WriteLine(s))
+      quitApplication 1
 
   let request endpoint parse =
     Http.get accessToken endpoint
     |> Option.bind (tryParseJson parse)
-
-  let getUser() =
-    let result = request Endpoints.user User.Parse
-    result
-
-  let getDevices() =
-    let result = request Endpoints.devices Devices.Parse
-    result |> Option.map (fun v -> v.Devices)
 
   let encryptPass =
     match options.EncryptPass with
     | None -> config |> Option.bind (fun c -> c.EncryptPass)
     | pass -> pass
 
-  { User = getUser |> retrieveOrRetry 5
-    Devices = getDevices |> retrieveOrRetry 5
+  { User =
+      (fun () -> request Endpoints.user User.Parse)
+      |> retrieveOrRetry 5
+    Devices =
+      (fun () ->
+        request Endpoints.devices Devices.Parse
+        |> Option.map (fun v -> v.Devices))
+      |> retrieveOrRetry 5
     AccessToken = accessToken
     EncryptPass = encryptPass }

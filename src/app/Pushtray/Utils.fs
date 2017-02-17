@@ -1,7 +1,5 @@
 module Pushtray.Utils
 
-open System
-open System.IO
 open System.Diagnostics
 open System.Timers
 open FSharp.Data
@@ -10,14 +8,17 @@ open FSharp.Data.HttpRequestHeaders
 let [<Literal>] SampleDir = __SOURCE_DIRECTORY__ + "/../../../samples/"
 
 module Option =
-  let getOrElse defaultValue (opt: 'a option) =
+  let getOrElse defaultValue opt =
     match opt with
     | Some v -> v
     | None -> defaultValue
 
 module String =
-  let split separators (str: string) =
-    str.Split(separators)
+  let split separators (str: string) = str.Split(separators)
+
+  let stripMargin (str: string) =
+    [ for line in split [|'\n'|] str -> line.TrimStart [|' '|] ]
+    |> String.concat "\n"
 
 module Async =
   let map f v =
@@ -26,11 +27,11 @@ module Async =
       return f value
     }
 
-  let choice onSuccess (asyncChoice: Async<Choice<string, exn>>) =
+  let choice onSuccess asyncChoice =
     asyncChoice |> map (fun choice ->
       match choice with
       | Choice1Of2 result -> onSuccess result
-      | Choice2Of2 (ex: Exception) ->
+      | Choice2Of2 (ex: exn) ->
         Logger.debug <| sprintf "AsyncChoice: %s" ex.Message
         None)
 
@@ -71,26 +72,6 @@ let tryParseJson parse result =
   try Some <| parse(result)
   with ex -> Logger.error ex.Message; None
 
-let appDataDirs =
-  try
-    let dataDirs =
-      [ Environment.SpecialFolder.ApplicationData
-        Environment.SpecialFolder.CommonApplicationData ]
-      |> List.map (fun p -> Path.Combine(Environment.GetFolderPath(p), "pushtray"))
-    Some <| (AppDomain.CurrentDomain.BaseDirectory :: dataDirs)
-  with ex ->
-    Logger.debug <| sprintf "DataDir: %s" ex.Message
-    None
-
-let userConfigDir =
-  Path.Combine
-    [| Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)
-       "pushtray" |]
-
-let userConfigFile =
-  let filePath = Path.Combine(userConfigDir, "config")
-  if File.Exists(filePath) then Some filePath else None
-
 let unixTimeStampToDateTime (timestamp: decimal) =
   System.DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(float timestamp)
 
@@ -99,3 +80,7 @@ let createTimer interval func =
   timer.Elapsed.Add(func)
   timer.AutoReset <- false
   timer
+
+let quitApplication code =
+  Gtk.Application.Quit()
+  exit code

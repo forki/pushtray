@@ -19,7 +19,7 @@ Options:
   --no-tray-icon              Don't show a tray icon.
   --no-icon-animations        Only show static tray icons.
   --sms-notify-icon=<icon>    Change the stock icon for SMS notifications.
-  --ignore-sms <numbers>      Don't show SMS notifications from these numbers
+  --ignore-sms <numbers>      Don't show SMS notifications from these numbers.
                               <numbers> is a comma-separated list or a single
                               asterisk to ignore all.
   --notify-format=<fmt>       Set notification format style (full | short)

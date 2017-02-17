@@ -13,21 +13,21 @@ usage:
 
 let options = "\
 options:
-  --access-token=<token>      Set the access token. This will override the
-                              config file value.
-  --encrypt-pass=<pass>       Set the encrypt password. This will override the
-                              config file value.
+  --access-token=<token>      Set the access token (overrides the config file
+                              value).
+  --encrypt-pass=<pass>       Set the encrypt password (overrides the config
+                              file value).
   --no-tray-icon              Don't show a tray icon.
+  --icon-style=<style>        Customize the tray icon style (light, dark)
   --enable-icon-animations    Show tray icon animations.
   --sms-notify-icon=<icon>    Change the stock icon for SMS notifications.
-  --ignore-sms <numbers>      Don't show SMS notifications from these numbers
+  --ignore-sms <numbers>      Don't show SMS notifications from these numbers.
                               <numbers> is a comma-separated list or a single
                               asterisk to ignore all.
-  --notify-format=<fmt>       Set notification format style (full | short)
+  --notify-format=<fmt>       Set notification format style (full, short)
   --notify-line-wrap=<wrap>   Set the line wrap width of notifications
                               (i.e. the maximum width)
   --notify-line-pad=<pad-to>  Set the minimum line width of notifications
-  --icon-style=<style>        Customize the tray icon style (light | dark)
   --log=<log-level>           Enable all logging messages at <log-level>
                               and higher"
 
@@ -86,8 +86,7 @@ let args =
       None)
 
   let argAsString key = key |> valueOf (fun v -> v.ToString())
-  let argAsIntWithDefault key = try argAsString key |> Option.map int with _ -> None
-  let argExists key = key |> valueOf (fun v -> v.IsTrue) |> Option.exists id
+  let argAsBool key = key |> valueOf (fun v -> v.IsTrue) |> Option.exists id
   let argAsSet key =
     match argAsString key with
     | Some s -> Set.ofArray <| s.Split [| ',' |]
@@ -100,7 +99,7 @@ let args =
             "devices"
             "-h"; "--help"
             "--version" ]
-      |> Set.filter argExists
+      |> Set.filter argAsBool
     Positional =
       { Number  = argAsString "<number>"
         Message = argAsString "<message>" }
@@ -108,8 +107,8 @@ let args =
       { Device                = argAsString "--device"
         AccessToken           = argAsString "--access-token"
         EncryptPass           = argAsString "--encrypt-pass"
-        NoTrayIcon            = argExists   "--no-tray-icon"
-        EnableIconAnimations  = argExists   "--enable-icon-animations"
+        NoTrayIcon            = argAsBool   "--no-tray-icon"
+        EnableIconAnimations  = argAsBool   "--enable-icon-animations"
         SmsNotifyIcon         = argAsString "--sms-notify-icon"
         IgnoreSms             = argAsSet    "--ignore-sms"
         NotifyFormat          = argAsString "--notify-format"    |> Option.getOrElse "short"
@@ -131,4 +130,4 @@ let command key func =
     exit 0
 
 let commands keys func =
-  keys |> List.iter (fun k -> command k func)
+  for k in keys do command k func

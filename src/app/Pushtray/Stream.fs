@@ -17,14 +17,14 @@ type Heartbeat(reconnect: unit -> unit, update: Update option) =
   // After 95 seconds of no activity (3 missed nops) we'll assume we need to reconnect
   let timer =
     (fun _ ->
-      update |> Option.iter (fun v -> v.OnDisconnected())
+      Option.iter (fun v -> v.OnDisconnected()) update
       reconnect())
     |> createTimer 95000.0
 
   do timer.Enabled <- true
 
   member this.OnNop() =
-    update |> Option.iter (fun v -> v.OnConnected())
+    Option.iter (fun v -> v.OnConnected()) update
     timer.Stop()
     timer.Start()
 
@@ -50,22 +50,17 @@ let private handleMessage account (heartbeat: Heartbeat) json =
     Logger.debug <| sprintf "Failed to handle message (%s)" ex.Message
 
 let rec connect (update: Update option) options =
-  update |> Option.iter (fun v -> v.OnDisconnected())
-
   Logger.trace "Pushbullet: Retrieving account info..."
   let account = requestAccountData options
-  account.Devices |> Array.iter (fun d ->
-    Logger.info <| sprintf "Device [%s %s] %s" d.Manufacturer d.Model d.Nickname)
+  for d in account.Devices do
+    Logger.info <| sprintf "Device [%s %s] %s" d.Manufacturer d.Model d.Nickname
 
   let websocket = new WebSocket(Endpoints.stream account.AccessToken)
-
   let reconnect() =
     lock websocket (fun () ->
-      Logger.trace "Pushbullet: Closing stream connection"
-      try websocket.Close(CloseStatusCode.Normal) with ex -> Logger.debug ex.Message)
-    Logger.trace "Pushbullet: Reconnecting"
+      try websocket.Close(CloseStatusCode.Normal)
+      with ex -> Logger.debug ex.Message)
     connect update options
-
   let heartbeat = new Heartbeat(reconnect, update)
 
   websocket.OnMessage.Add(fun e -> handleMessage account heartbeat e.Data)
@@ -77,6 +72,6 @@ let rec connect (update: Update option) options =
     | CloseStatusCode.Normal | CloseStatusCode.Away -> ()
     | _ ->
       Logger.trace "Pushbullet: Websocket closed abnormally, exiting..."
-      exit 1)
+      quitApplication 1)
 
   websocket.ConnectAsync()

@@ -28,7 +28,7 @@ let private selectDevice (devices: Device[]) =
       match int <| System.Console.ReadLine().Trim() with
       | n when n >= 1 && n <= numDevices -> n
       | _ -> readNumber true
-    with ex ->
+    with _ ->
       readNumber true
 
   if numDevices > 1 then

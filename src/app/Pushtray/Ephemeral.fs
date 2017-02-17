@@ -8,16 +8,11 @@ open Pushtray.Cli
 open Pushtray.Utils
 
 let [<Literal>] private MirrorSample = SampleDir + "mirror.json"
-let [<Literal>] private DismissalSample = SampleDir + "dismissal.json"
-let [<Literal>] private SmsChangedSample = SampleDir + "sms-changed.json"
-
 type Mirror = JsonProvider<MirrorSample, SampleIsList=true>
+let [<Literal>] private DismissalSample = SampleDir + "dismissal.json"
 type Dismissal = JsonProvider<DismissalSample, SampleIsList=true>
+let [<Literal>] private SmsChangedSample = SampleDir + "sms-changed.json"
 type SmsChanged = JsonProvider<SmsChangedSample, InferTypesFromValues=false>
-
-let private deviceInfo (devices: Device[]) deviceIden =
-  devices |> Array.tryFind (fun d -> d.Iden = deviceIden)
-  |> Option.map (fun d -> d.Nickname.Trim())
 
 let send account pushJson =
   let encryptedJson password =
@@ -41,6 +36,9 @@ let dismiss userIden (push: Mirror.Root) =
         notificationTag = push.NotificationTag.JsonValue )
   send userIden <| ephemeral.JsonValue.ToString()
 
+let private findDevice (devices: Device[]) iden =
+  devices |> Array.tryFind (fun d -> d.Iden = iden)
+
 let private handleAction triggerKey =
   // TODO
   ()
@@ -49,7 +47,7 @@ let private handleMirror account (push: Mirror.Root) =
   Notification.send
     { Summary = Text(sprintf "%s: %s" (push.ApplicationName.Trim()) (push.Title.Trim()))
       Body = Text(push.Body.Trim())
-      DeviceInfo = deviceInfo account.Devices push.SourceDeviceIden
+      Device = findDevice account.Devices push.SourceDeviceIden
       Timestamp = None
       Icon = Notification.Base64(push.Icon)
       Actions = push.Actions |> Array.map (fun a ->
@@ -71,8 +69,8 @@ let private handleSmsChanged account (push: SmsChanged.Root) =
       Notification.send
         { Summary = Text(sprintf "%s" <| notif.Title.Trim())
           Body = Text(notif.Body.Trim())
-          DeviceInfo = deviceInfo account.Devices push.SourceDeviceIden
-          Timestamp = Some <| (unixTimeStampToDateTime notif.Timestamp).ToString("hh:mm tt")
+          Device = findDevice account.Devices push.SourceDeviceIden
+          Timestamp = Some notif.Timestamp
           Icon = Notification.Stock(args.Options.SmsNotifyIcon |> Option.getOrElse "phone")
           Actions = [||]
           Dismissible = None })

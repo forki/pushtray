@@ -58,13 +58,14 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Logger.fs" />
+    <Compile Include="Environment.fs" />
     <Compile Include="Utils.fs" />
     <Compile Include="Cli.fs" />
     <Compile Include="Config.fs" />
     <Compile Include="TrayIcon.fs" />
+    <Compile Include="Pushbullet.fs" />
     <Compile Include="Notification.fs" />
     <Compile Include="Crypto.fs" />
-    <Compile Include="Pushbullet.fs" />
     <Compile Include="Ephemeral.fs" />
     <Compile Include="Stream.fs" />
     <Compile Include="Sms.fs" />

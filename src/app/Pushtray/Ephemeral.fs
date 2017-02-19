@@ -14,34 +14,33 @@ type Dismissal = JsonProvider<DismissalSample, SampleIsList=true>
 let [<Literal>] private SmsChangedSample = SampleDir + "sms-changed.json"
 type SmsChanged = JsonProvider<SmsChangedSample, InferTypesFromValues=false>
 
-let send account pushJson =
+let send account pushAsJson =
   let encryptedJson password =
-    Crypto.encrypt password account.User.Iden pushJson
+    Crypto.encrypt password account.User.Iden pushAsJson
     |> Option.map (sprintf """{"ciphertext": "%s", "encrypted": true}""")
   account.EncryptPass
-  |> Option.fold (fun _ p -> encryptedJson p) (Some pushJson)
+  |> Option.fold (fun _ p -> encryptedJson p) (Some pushAsJson)
   |> Option.map
     (sprintf """{"push": %s, "type": "push"}"""
       >> Http.post account.AccessToken Endpoints.ephemerals
       >> Async.choice Some)
 
-let dismiss userIden (push: Mirror.Root) =
+let dismiss triggerKey account (push: Mirror.Root) =
   let ephemeral =
     Dismissal.Root
       ( ``type`` = "dismissal",
-        sourceDeviceIden = "",
+        sourceDeviceIden = None,
         sourceUserIden = push.SourceUserIden,
         packageName = push.PackageName,
         notificationId = push.NotificationId,
-        notificationTag = push.NotificationTag.JsonValue )
-  send userIden <| ephemeral.JsonValue.ToString()
+        notificationTag = push.NotificationTag.JsonValue,
+        triggerAction = triggerKey )
+  ephemeral.JsonValue.ToString()
+  |> send account
+  |> Option.iter (Async.Ignore >> Async.Start)
 
 let private findDevice (devices: Device[]) iden =
   devices |> Array.tryFind (fun d -> d.Iden = iden)
-
-let private handleAction triggerKey =
-  // TODO
-  ()
 
 let private handleMirror account (push: Mirror.Root) =
   Notification.send
@@ -52,9 +51,9 @@ let private handleMirror account (push: Mirror.Root) =
       Icon = Notification.Base64(push.Icon)
       Actions = push.Actions |> Array.map (fun a ->
         { Label = a.Label
-          Handler = fun _ -> handleAction a.TriggerKey })
+          Handler = fun _ -> dismiss (Some a.TriggerKey) account push })
       Dismissible =
-        if push.Dismissible then Some <| fun () -> dismiss account push
+        if push.Dismissible then Some <| fun () -> dismiss None account push
         else None }
 
 let private handleDismissal (push: Dismissal.Root) =

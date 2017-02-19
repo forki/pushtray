@@ -14,7 +14,7 @@ type NotificationData =
     Timestamp: decimal option
     Icon: Icon
     Actions: Action[]
-    Dismissible: (unit -> Async<string option> option) option }
+    Dismissible: (unit -> unit) option }
 
 and NotificationText =
   | Text of string
@@ -27,7 +27,7 @@ and Icon =
 
 and Action =
   { Label: string
-    Handler: (ActionArgs -> unit) }
+    Handler: ActionArgs -> unit }
 
 type Format =
   | Full
@@ -67,10 +67,6 @@ let private prettify text =
   |> Array.map (padLine args.Options.NotifyLinePad)
   |> String.concat "\n"
 
-let private dismiss asyncRequest (notification: Notification) (args: ActionArgs) =
-  asyncRequest() |> Option.iter (Async.Ignore >> Async.Start)
-  notification.Close()
-
 let send data =
   let footer =
     match format with
@@ -99,7 +95,7 @@ let send data =
       | File(path) -> new Notification(summary, body, new Pixbuf(path))
 
     match data.Dismissible with
-    | Some(request) -> [| { Label = "Dismiss"; Handler = (dismiss request notification) } |]
+    | Some(func) -> [| { Label = "Dismiss"; Handler = fun _ -> func() } |]
     | None -> [||]
     |> Array.append data.Actions
     |> Array.iter (fun a ->

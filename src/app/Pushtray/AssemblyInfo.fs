@@ -19,7 +19,7 @@ open System.Reflection
 open System.Resources
 
 let [<Literal>] Product = "Pushtray"
-let [<Literal>] Version = "0.1.2"
+let [<Literal>] Version = "0.1.3"
 let [<Literal>] Author = "Jatan Patel"
 let [<Literal>] Website = "https://github.com/jjpatel/pushtray"
 

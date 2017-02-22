@@ -6,7 +6,7 @@ open Fake.FileUtils
 let projectName = "Pushtray"
 let solution = sprintf "%s.sln" projectName
 let binary = sprintf "%s.exe" <| projectName.ToLower()
-let version = "0.1.2";
+let version = "0.1.3";
 let config = getBuildParamOrDefault "config" "Release"
 let platformTarget = getBuildParamOrDefault "platformTarget" "AnyCPU"
 

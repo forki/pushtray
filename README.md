@@ -9,7 +9,7 @@ Usage:
   pushtray connect [options]
   pushtray sms <number> <message> [--device=<name>] [options]
   pushtray list devices [options]
-  pushtray (-h | --help)"
+  pushtray (-h | --help)
 
 Options:
   --access-token=<token>      Set the access token. This will override the
@@ -50,8 +50,8 @@ $ make
 **Other distros**
 
 1. Follow [this guide](http://fsharp.org/use/linux/) to install Mono and F#.
-2. Install `gtk-sharp-3` and `notify-sharp-3`. They should be available from your distro's package manager. If they're not found try some variations (e.g. `notify-sharp3` or `notify-sharp-3.0`).
-3. Then just clone the repo and run Make as shown above.
+2. Install `gtk-sharp-3` and `notify-sharp-3` from your distro's package manager. You might have to search around a bit for the correct package. For example, on Ubuntu `notify-sharp-3` is called `libnotify3.0-cil`.
+3. Clone the repo and run Make as shown above.
 
 ### Similar projects
 

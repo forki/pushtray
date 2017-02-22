@@ -74,14 +74,34 @@ let iconDataForState state (map: Map<IconState, IconData>) =
 type TrayIcon(iconStyle: string) =
   let icons = iconMap iconStyle
 
+  let aboutDialog =
+    let about = new AboutDialog()
+    about.ProgramName <- AssemblyInfo.Product
+    about.Version <- AssemblyInfo.Version
+    about.LogoIconName <- Stock.Home
+    about.Copyright <- sprintf "(C) %s" AssemblyInfo.Author
+    about.Website <- AssemblyInfo.Website
+    about.WebsiteLabel <- AssemblyInfo.Website
+    about
+
+  let show (dialog: Gtk.Dialog) =
+    let window = new Window("Dummy")
+    window.Visible <- false
+    dialog.TransientFor <- window
+    dialog.Run() |> ignore
+    dialog.Hide()
+    window.Dispose()
+
   let onTrayIconPopup args =
-    let menuItemQuit = new ImageMenuItem("Quit")
-    let quitImage = new Gtk.Image(Stock.Quit, IconSize.Menu)
-    menuItemQuit.Image <- quitImage
-    menuItemQuit.Activated.Add(fun _ -> exit 0)
+    let menuItem (text: string) (image: string) onActivated =
+      let item = new ImageMenuItem(text)
+      item.Image <- new Gtk.Image(image, IconSize.Menu)
+      item.Activated.Add(onActivated)
+      item
 
     let popupMenu = new Menu()
-    popupMenu.Add(menuItemQuit)
+    popupMenu.Add(menuItem "About" Stock.About (fun _ -> show aboutDialog))
+    popupMenu.Add(menuItem "Quit" Stock.Quit (fun _ -> exit 0))
     popupMenu.ShowAll()
     popupMenu.Popup()
 

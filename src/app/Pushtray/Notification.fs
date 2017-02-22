@@ -67,25 +67,24 @@ let private prettify text =
   |> Array.map (padLine args.Options.NotifyLinePad)
   |> String.concat "\n"
 
-let send data =
-  let footer =
-    match format with
-    | Full ->
-      let deviceName = data.Device |> Option.fold (fun _ v -> v.Nickname) ""
-      let timestamp =
-        match data.Timestamp with
-        | Some t -> (unixTimeStampToDateTime t).ToString("hh:mm tt")
-        | None -> ""
-      sprintf "%s %s" deviceName timestamp
-      |> prettify
-      |> sprintf "\n<i>%s</i>"
-    | Short -> ""
+let private footer data = function
+  | Full ->
+    let deviceName = data.Device |> Option.fold (fun _ v -> v.Nickname) ""
+    let timestamp =
+      match data.Timestamp with
+      | Some t -> (unixTimeStampToDateTime t).ToString("hh:mm tt")
+      | None -> ""
+    sprintf "%s %s" deviceName timestamp
+    |> prettify
+    |> sprintf "\n<i>%s</i>"
+  | Short -> ""
 
+let send data =
   let formatText = function
     | Text(str) -> prettify str
     | TextWithFormat(str, format) -> format <| prettify str
   let summary = formatText data.Summary
-  let body = formatText data.Body + footer
+  let body = formatText data.Body + footer data format
 
   Gtk.Application.Invoke(fun _ _ ->
     let notification =

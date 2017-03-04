@@ -4,6 +4,23 @@ Android phone notifications on Linux via Pushbullet.
 
 ### Usage
 
+First create a config file at `$XDG_CONFIG_HOME/pushtray/config` like so:
+
+```text
+access_token = o.mYsU4pER6SeCrETA34cc7ES2sTo60KEn
+encrypt_pass = mypass
+```
+
+Then you can connect to the notification stream:
+
+```
+$ pushtray connect
+```
+
+You might need to fiddle with the `--notify-line-wrap` and `--notify-line-pad` options to make the notifications look decent at your specific resolution.
+
+**Full usage:**
+
 ```
 Usage:
   pushtray connect [options]
@@ -35,12 +52,12 @@ Options:
 
 **Arch Linux**
 
-First install the required dependencies:
+Install the required dependencies:
 ``` console
 $ sudo pacman -S mono fsharp notify-sharp-3
 ```
 
-Then you should be able to simply do the following:
+You should then be able to simply do the following:
 ``` console
 $ git clone https://github.com/jjpatel/pushtray
 $ cd pushtray

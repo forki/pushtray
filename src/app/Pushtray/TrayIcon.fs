@@ -146,8 +146,8 @@ type TrayIcon(iconStyle: string) =
           for _ in 0 .. 3 do
             if not <| cancel.IsCancellationRequested then
               for state in [| Sync0; Sync1; Sync2; Sync3 |] do
-                  update state
-                  Thread.Sleep(250)
+                update state
+                Thread.Sleep(250)
         else
           update Sync0
       }

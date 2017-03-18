@@ -73,18 +73,16 @@ let requestAccountData (options: Cli.Options) =
     Http.get accessToken endpoint
     |> Option.bind (tryParseJson parse)
 
-  let encryptPass =
-    match options.EncryptPass with
-    | None -> config |> Option.bind (fun c -> c.EncryptPass)
-    | pass -> pass
-
   { User =
       (fun () -> request Endpoints.user User.Parse)
       |> retrieveOrRetry 5
     Devices =
       (fun () ->
-        request Endpoints.devices Devices.Parse
-        |> Option.map (fun v -> v.Devices))
+         request Endpoints.devices Devices.Parse
+         |> Option.map (fun v -> v.Devices))
       |> retrieveOrRetry 5
     AccessToken = accessToken
-    EncryptPass = encryptPass }
+    EncryptPass =
+      match options.EncryptPass with
+      | None -> config |> Option.bind (fun c -> c.EncryptPass)
+      | pass -> pass }

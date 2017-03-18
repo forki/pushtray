@@ -49,7 +49,7 @@ type Format =
   | Short
 
 let private format =
-  match args.Options.NotifyFormat with
+  match args.Options.NotifyFormat.ToLower() with
   | "full" -> Full
   | "short" -> Short
   | str ->
@@ -57,22 +57,22 @@ let private format =
     Short
 
 let private wrapLine width line =
-  let rec loop remaining result words =
+  let rec loop spaceRemaining result words =
     match words with
     | head :: tail ->
-      let (acc, remain) =
-        if String.length head > remaining then (sprintf "%s\n" head, width)
-        else (head + " ", remaining - head.Length)
-      loop remain (result + acc) tail
+      let (acc, remaining) =
+        if String.length head > spaceRemaining then (head + "\n", width)
+        else (head + " ", spaceRemaining - head.Length)
+      loop remaining (result + acc) tail
     | _ -> result
   String.split [|' '|] line
   |> (List.ofArray >> loop width "")
 
 let private padLine width line =
   (if String.length line < width then
-    line + (String.replicate (width - line.Length) " ")
-  else
-    line)
+     line + (String.replicate (width - line.Length) " ")
+   else
+     line)
   |> sprintf "%s%s" "  "
 
 let private prettify text =
@@ -107,7 +107,6 @@ let send data =
       | Stock(str) -> new Notification(summary, body, str)
       | Base64(str) -> new Notification(summary, body, new Pixbuf(Convert.FromBase64String(str)))
       | File(path) -> new Notification(summary, body, new Pixbuf(path))
-
     match data.Dismissible with
     | Some(func) -> [| { Label = "Dismiss"; Handler = fun _ -> func() } |]
     | None -> [||]
@@ -115,10 +114,8 @@ let send data =
     |> Array.iter (fun a ->
       Logger.trace <| sprintf "Notification: Adding action '%s'" a.Label
       notification.AddAction(a.Label, a.Label, fun _ args -> a.Handler args))
-
     Logger.trace <|
       sprintf "Notification: Summary = '%s' Body = '%s'"
         (notification.Summary.Trim())
         (notification.Body.Trim())
-
     notification.Show())

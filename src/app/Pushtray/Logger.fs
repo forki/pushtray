@@ -62,7 +62,6 @@ let private write logLevel (str: string) =
     |> sprintf "%s "
     |> writeWithColor color
     |> ignore
-
   if logLevel >= minLogLevel then
     logLevelColors.TryFind logLevel |> Option.iter printLogNameWithColor
     System.Console.WriteLine(str)

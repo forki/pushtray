@@ -36,7 +36,6 @@ let private sendRequest account targetDeviceIden phoneNumber message =
 
 let private selectDevice (devices: Device[]) =
   let numDevices = Array.length devices
-
   let rec readNumber shouldShowMessage =
     if shouldShowMessage then printf "Please enter a number [1 - %d]: " numDevices
     try
@@ -45,9 +44,9 @@ let private selectDevice (devices: Device[]) =
       | _ -> readNumber true
     with _ ->
       readNumber true
-
   if numDevices > 1 then
-    devices |> Array.iteri (fun i d -> printfn "%d: %s %s" (i + 1) d.Manufacturer d.Nickname)
+    for (i, d) in Seq.indexed devices do
+      printfn "%d: %s %s" (i + 1) d.Manufacturer d.Nickname
     printf "Choose device [1 - %d]: " numDevices
     devices.[(readNumber false) - 1]
   else if numDevices = 1 then
@@ -58,7 +57,6 @@ let private selectDevice (devices: Device[]) =
 
 let send (account: AccountData) deviceRegex number message =
   let isSmsCapable (device: Device) = device.Type = "android"
-
   let device =
     deviceRegex
     |> Option.map (fun regex ->
@@ -70,7 +68,6 @@ let send (account: AccountData) deviceRegex number message =
     |> function
     | Some d when d.Length >= 1 -> selectDevice d
     | _ -> account.Devices |> Array.filter isSmsCapable |> selectDevice
-
   let response =
     sendRequest account device.Iden number message
     |> Option.bind Async.RunSynchronously

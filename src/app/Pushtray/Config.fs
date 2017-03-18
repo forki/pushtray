@@ -22,7 +22,7 @@ type Config =
   { AccessToken: string option
     EncryptPass: string option }
 
-let private parseConfigLine line =
+let private readConfigLine line =
   if Regex.Match(line, "^\s*#.*$").Success then
     None
   else
@@ -38,7 +38,7 @@ let readConfigFile (filePath: string) =
   use reader = new StreamReader(filePath)
   let values =
     [ while not reader.EndOfStream do yield reader.ReadLine() ]
-    |> List.choose parseConfigLine
+    |> List.choose readConfigLine
     |> Map.ofList
   { AccessToken = values.TryFind "access_token"
     EncryptPass = values.TryFind "encrypt_pass" }

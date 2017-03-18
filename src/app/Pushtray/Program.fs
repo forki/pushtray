@@ -43,15 +43,11 @@ let private sms() =
 
 let private list() =
   command "devices" <| fun () ->
-    (Pushbullet.requestAccountData args.Options).Devices
-    |> Array.iter (fun d ->
-      printfn "%s (%s %s)" d.Nickname d.Manufacturer d.Model)
+    for d in (Pushbullet.requestAccountData args.Options).Devices do
+      printfn "%s (%s %s)" d.Nickname d.Manufacturer d.Model
 
-let private help() =
-  printfn "%s" usageWithOptions
-
-let private version() =
-  printfn "%s" version
+let private help() = printfn "%s" usageWithOptions
+let private version() = printfn "%s" version
 
 [<EntryPoint>]
 let main argv =

@@ -93,12 +93,12 @@ let args =
 
   let valueOf func key =
     docoptArgs |> Option.bind (fun a ->
-    if a.ContainsKey(key) then
-      match a.[key] with
-      | null -> None
-      | v -> Some <| func v
-    else
-      None)
+      if a.ContainsKey(key) then
+        match a.[key] with
+        | null -> None
+        | v -> Some <| func v
+      else
+        None)
 
   let argAsString key = key |> valueOf (fun v -> v.ToString())
   let argAsBool key = key |> valueOf (fun v -> v.IsTrue) |> Option.exists id

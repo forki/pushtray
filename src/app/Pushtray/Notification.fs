@@ -100,7 +100,6 @@ let send data =
     | TextWithFormat(str, format) -> format <| prettify str
   let summary = formatText data.Summary
   let body = formatText data.Body + footer data format
-
   Gtk.Application.Invoke(fun _ _ ->
     let notification =
       match data.Icon with

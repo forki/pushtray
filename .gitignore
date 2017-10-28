@@ -5,3 +5,4 @@ packages
 output
 dist
 extra
+*.cache

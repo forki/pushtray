@@ -69,15 +69,13 @@ let rec connect (update: Update option) options =
   let account = requestAccountData options
   for d in account.Devices do
     Logger.info <| sprintf "Device [%s %s] %s" d.Manufacturer d.Model d.Nickname
-
   let websocket = new WebSocket(Endpoints.stream account.AccessToken)
   let reconnect() =
     lock websocket (fun () ->
       try websocket.Close(CloseStatusCode.Normal)
       with ex -> Logger.debug ex.Message)
     connect update options
-  let heartbeat = new Heartbeat(reconnect, update)
-
+  let heartbeat = Heartbeat(reconnect, update)
   websocket.OnMessage.Add(fun e -> handleMessage account heartbeat e.Data)
   websocket.OnError.Add(fun e -> Logger.error e.Message)
   websocket.OnOpen.Add(fun _ -> Logger.trace "Pushbullet: Opening stream connection")
@@ -88,5 +86,4 @@ let rec connect (update: Update option) options =
     | _ ->
       Logger.trace "Pushbullet: Websocket closed abnormally, exiting..."
       quitApplication 1)
-
   websocket.ConnectAsync()

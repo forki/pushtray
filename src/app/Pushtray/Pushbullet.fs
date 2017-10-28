@@ -68,11 +68,9 @@ let requestAccountData (options: Cli.Options) =
         "   access_token = <token>" ]
       |> List.iter (fun s -> System.Console.WriteLine(s))
       quitApplication 1
-
   let request endpoint parse =
     Http.get accessToken endpoint
     |> Option.bind (tryParseJson parse)
-
   { User =
       (fun () -> request Endpoints.user User.Parse)
       |> retrieveOrRetry 5

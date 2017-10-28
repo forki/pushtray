@@ -90,7 +90,6 @@ let args =
     #else
     Some (parseArgs <| System.Environment.GetCommandLineArgs().[1..])
     #endif
-
   let valueOf func key =
     docoptArgs |> Option.bind (fun a ->
       if a.ContainsKey(key) then
@@ -99,14 +98,12 @@ let args =
         | v -> Some <| func v
       else
         None)
-
   let argAsString key = key |> valueOf (fun v -> v.ToString())
   let argAsBool key = key |> valueOf (fun v -> v.IsTrue) |> Option.exists id
   let argAsSet key =
     match argAsString key with
     | Some s -> Set.ofArray <| s.Split [| ',' |]
     | None -> Set.empty
-
   { Commands =
       Set [ "connect"
             "sms"

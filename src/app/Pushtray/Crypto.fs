@@ -22,7 +22,7 @@ open Org.BouncyCastle.Security
 open Pushtray.Notification
 
 let private createCipher() = Security.CipherUtilities.GetCipher("AES/GCM/NoPadding")
-let private secureRandom = new SecureRandom()
+let private secureRandom = SecureRandom()
 
 let private generateKey (password: string) (salt: string) =
   let gen = Generators.Pkcs5S2ParametersGenerator(Digests.Sha256Digest())

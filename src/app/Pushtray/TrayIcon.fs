@@ -113,7 +113,6 @@ type TrayIcon(iconStyle: string) =
       item.Image <- new Gtk.Image(image, IconSize.Menu)
       item.Activated.Add(onActivated)
       item
-
     let popupMenu = new Menu()
     popupMenu.Add(menuItem "About" Stock.About (fun _ -> show aboutDialog))
     popupMenu.Add(menuItem "Quit" Stock.Quit (fun _ -> exit 0))
